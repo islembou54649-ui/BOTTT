@@ -142,153 +142,89 @@ def emj(name, base_emoji=""):
     return f'<tg-emoji emoji-id="{EMOJI_IDS[name]}">{base_emoji}</tg-emoji>'
 
 # ============================================================
-# AUTO-LOADED EMOJI MAP (from Emoji.json - 7000+ premium emojis)
+# HARDCODED PREMIUM EMOJI MAP (no Emoji.json file needed)
+# These IDs are embedded directly in the code.
+# Bot works WITHOUT Emoji.json file.
 # ============================================================
 import json as _json_module
-_EMOJI_JSON_PATH = None
-for _path in [
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "Emoji.json"),
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "ايموجي"),
-    os.path.join(os.getcwd(), "Emoji.json"),
-    "Emoji.json",
-]:
-    if os.path.exists(_path):
-        _EMOJI_JSON_PATH = _path
-        break
-_EMOJI_MAP_CACHE = {}  # base emoji -> custom_emoji_id
-_EMOJI_MAP_LOADED = False
+_EMOJI_MAP_CACHE = {
+    # Emojis used in e() calls throughout the bot
+    "⚡": "5373066076558996568",   # NeonEmoji - lightning
+    "✨": "5217818964612108191",  # EffectEmoji - sparkles
+    "🎉": "5235711785482341993",  # SparklesEmoji - celebration
+    "💎": "5465283645788937267",  # NeonEmoji - diamond
+    "📈": "5373001317042101552",  # RestrictedEmoji - chart up
+    "😍": "5217824874487101321",  # RestrictedEmoji - heart eyes
+    "🙏": "5472189549473963781",  # RestrictedEmoji - pray
+    "🚀": "5217880283860194582",  # EffectEmoji - rocket
+    "🛠": "5462921117423384478",  # GameEmoji - tools
+    # Fallback emojis (emojis not in standard sets)
+    "⏹️": EMOJI_IDS.get("tools", ""),
+    "⏹": EMOJI_IDS.get("tools", ""),
+    "🆔": EMOJI_IDS.get("user", ""),
+    "📋": EMOJI_IDS.get("clipboard", ""),
+    "📛": EMOJI_IDS.get("user", ""),
+    "🔵": EMOJI_IDS.get("link", ""),
+}
+_EMOJI_MAP_LOADED = True  # Already loaded - no file needed
 
 # ============================================================
 # PREMIUM LUXURY EMOJI OVERRIDES (40 hand-picked premium emoji IDs)
-# These are the user-specified "luxury" custom emojis that take
-# HIGHEST PRIORITY over any other mapping from Emoji.json.
 # ============================================================
 _LUXURY_EMOJI_OVERRIDES = {
-    "\U0001F606": "5323523560080158541",  # 😆 - Laughing with closed eyes
-    "\U0001F605": "5199468807034253648",  # 😅 - Sweating smile
-    "\U0001F60A": "5352899869369446268",  # 😊 - Smiling eyes
-    "\U0001F609": "5339267587337370029",  # 😉 - Winking
-    "\U0001F60D": "5217824874487101321",  # 😍 - Heart eyes
-    "\U0001F618": "5307736407056331791",  # 😘 - Kissing heart
-    "\U0001F61D": "5460631951394225073",  # 😝 - Squinting tongue
-    "\U0001F928": "5352640560718949874",  # 🤨 - Raised eyebrow
-    "\U0001F929": "5353025608832004653",  # 🤩 - Star struck
-    "\U0001F973": "5197630131534836123",  # 🥳 - Partying face
-    "\U0001F97A": "5458378137240877666",  # 🥺 - Pleading face
-    "\U0001F622": "5323329096845897690",  # 😢 - Crying
-    "\U0001F62D": "5339124569221377480",  # 😭 - Sobbing
-    "\U0001F621": "5217467090826441505",  # 😡 - Pouting
-    "\U0001F92F": "5197564405650307134",  # 🤯 - Exploding head
-    "\U0001F976": "5197581306346617713",  # 🥶 - Cold face
-    "\U0001F631": "5197706972794731241",  # 😱 - Screaming in fear
-    "\U0001F628": "5460958179930158488",  # 😨 - Fearful
-    "\U0001FAE2": "5197404349399054490",  # 🫢 - Hand over mouth
-    "\U0001FAE1": "5323772371830588991",  # 🫡 - Saluting face
-    "\U0001FAE0": "5197170531379459422",  # 🫠 - Melting face
-    "\U0001F62C": "5352609143033180462",  # 😬 - Grimacing
-    "\U0001F971": "5447445388183222331",  # 🥱 - Yawning
-    "\U0001F634": "5341363621572128687",  # 😴 - Sleeping
-    "\U0001F635": "5422649047334794716",  # 😵 - Dizzy
-    "\U0001F635\u200D\U0001F4AB": "5296424506875722458",  # 😵‍💫 - Spiral eyes
-    "\U0001F92E": "5384083969048325091",  # 🤮 - Vomiting
-    "\U0001F911": "5436386989857320953",  # 🤑 - Money mouth
-    "\U0001F608": "5197645099495862838",  # 😈 - Devil smile
-    "\U0001F921": "5197188419918246648",  # 🤡 - Clown
-    "\U0001F4A9": "5199763841222721243",  # 💩 - Pile of poo
-    "\U0001F480": "5375407413555900550",  # 💀 - Skull
-    "\U0001F44D": "5323547156630483403",  # 👍 - Thumbs up
-    "\U0001F44E": "5197396124536682206",  # 👎 - Thumbs down
-    "\U0001F44C": "5422446685655676792",  # 👌 - OK hand
-    "\U0001F44B": "5199885118214255386",  # 👋 - Waving hand
-    "\U0001F64F": "5458774648621643551",  # 🙏 - Folded hands
-    "\U0001F645\u200D\u2642\uFE0F": "5422858869372104873",  # 🙅‍♂️ - Man gesturing no
-    "\u2795": "5433805508353996553",      # ➕ - Plus
-    "\U0001F4AF": "5447508713181034519",  # 💯 - Hundred points
+    "\U0001F606": "5323523560080158541",  # 😆
+    "\U0001F605": "5199468807034253648",  # 😅
+    "\U0001F60A": "5352899869369446268",  # 😊
+    "\U0001F609": "5339267587337370029",  # 😉
+    "\U0001F60D": "5217824874487101321",  # 😍
+    "\U0001F618": "5307736407056331791",  # 😘
+    "\U0001F61D": "5460631951394225073",  # 😝
+    "\U0001F928": "5352640560718949874",  # 🤨
+    "\U0001F929": "5353025608832004653",  # 🤩
+    "\U0001F973": "5197630131534836123",  # 🥳
+    "\U0001F97A": "5458378137240877666",  # 🥺
+    "\U0001F622": "5323329096845897690",  # 😢
+    "\U0001F62D": "5339124569221377480",  # 😭
+    "\U0001F621": "5217467090826441505",  # 😡
+    "\U0001F92F": "5197564405650307134",  # 🤯
+    "\U0001F976": "5197581306346617713",  # 🥶
+    "\U0001F631": "5197706972794731241",  # 😱
+    "\U0001F628": "5460958179930158488",  # 😨
+    "\U0001FAE2": "5197404349399054490",  # 🫢
+    "\U0001FAE1": "5323772371830588991",  # 🫡
+    "\U0001FAE0": "5197170531379459422",  # 🫠
+    "\U0001F62C": "5352609143033180462",  # 😬
+    "\U0001F971": "5447445388183222331",  # 🥱
+    "\U0001F634": "5341363621572128687",  # 😴
+    "\U0001F635": "5422649047334794716",  # 😵
+    "\U0001F635\u200D\U0001F4AB": "5296424506875722458",  # 😵‍💫
+    "\U0001F92E": "5384083969048325091",  # 🤮
+    "\U0001F911": "5436386989857320953",  # 🤑
+    "\U0001F608": "5197645099495862838",  # 😈
+    "\U0001F921": "5197188419918246648",  # 🤡
+    "\U0001F4A9": "5199763841222721243",  # 💩
+    "\U0001F480": "5375407413555900550",  # 💀
+    "\U0001F44D": "5323547156630483403",  # 👍
+    "\U0001F44E": "5197396124536682206",  # 👎
+    "\U0001F44C": "5422446685655676792",  # 👌
+    "\U0001F44B": "5199885118214255386",  # 👋
+    "\U0001F64F": "5458774648621643551",  # 🙏
+    "\U0001F645\u200D\u2642\uFE0F": "5422858869372104873",  # 🙅‍♂️
+    "\u2795": "5433805508353996553",      # ➕
+    "\U0001F4AF": "5447508713181034519",  # 💯
 }
-
-# Fallback mapping for emojis NOT in Emoji.json (using existing EMOJI_IDS)
-# These are manually mapped to suitable premium custom emojis from EMOJI_IDS.
-_EMOJI_FALLBACK = {}
-
-def _build_fallback():
-    """Build fallback mapping from EMOJI_IDS for emojis not in Emoji.json."""
-    global _EMOJI_FALLBACK
-    _EMOJI_FALLBACK = {
-        "\u23f9\ufe0f": EMOJI_IDS.get("tools", ""),       # ⏹️ stop -> tools
-        "\u23f9": EMOJI_IDS.get("tools", ""),              # ⏹ stop -> tools
-        "\U0001F194": EMOJI_IDS.get("user", ""),           # 🆔 ID -> ID card
-        "\U0001F4CB": EMOJI_IDS.get("clipboard", ""),      # 📋 clipboard -> memo
-        "\U0001F4DB": EMOJI_IDS.get("user", ""),           # 📛 name badge -> ID card
-        "\U0001F535": EMOJI_IDS.get("link", ""),           # 🔵 blue circle -> blue link
-    }
-
-# Preference order for premium / colorful / animated categories
-_EMOJI_CATEGORY_PREFERENCE = [
-    "NeonEmoji", "SparklesEmoji", "GlowingFont", "EffectEmoji",
-    "RestrictedEmoji", "TopicIcons", "TONEmoji", "FinanceEmoji",
-    "CuteEmoji", "UnicornEmoji", "HandEmoji", "StarEmoji",
-    "HeartEmoji", "FaceEmoji", "GameEmoji", "NewsEmoji",
-    "ApplicationEmoji", "CrayonsEmoji", "KawaiiEmoji",
-    "MadEmoji2", "MadEmoji", "ColorfulFontEmoji", "LedScreenEmoji",
-    "PencilEmoji", "HandDrawnEmoji", "OutlineEmoji",
-]
+# Apply luxury overrides to the cache
+_EMOJI_MAP_CACHE.update(_LUXURY_EMOJI_OVERRIDES)
 
 def _load_emoji_map():
-    """Load Emoji.json once and build base-emoji -> custom_emoji_id mapping.
-    The LUXURY emoji overrides take HIGHEST priority."""
-    global _EMOJI_MAP_CACHE, _EMOJI_MAP_LOADED
-    if _EMOJI_MAP_LOADED:
-        return _EMOJI_MAP_CACHE
-    _build_fallback()
-    try:
-        if not _EMOJI_JSON_PATH or not os.path.exists(_EMOJI_JSON_PATH):
-            logging.warning("Emoji.json not found - using fallback emojis only")
-            _EMOJI_MAP_LOADED = True
-            return _EMOJI_MAP_CACHE
-        with open(_EMOJI_JSON_PATH, "r", encoding="utf-8") as _f:
-            _data = _json_module.load(_f)
-        _candidates = {}
-        for _cat, _cat_data in _data.items():
-            for _entry in _cat_data.get("emoji", []):
-                _emoji = _entry.get("emoji")
-                _cid = _entry.get("custom_emoji_id")
-                if _emoji and _cid:
-                    _candidates.setdefault(_emoji, []).append((_cat, _cid))
-        for _emoji, _opts in _candidates.items():
-            _chosen = None
-            for _pref in _EMOJI_CATEGORY_PREFERENCE:
-                for _cat, _cid in _opts:
-                    if _cat == _pref:
-                        _chosen = _cid
-                        break
-                if _chosen:
-                    break
-            if not _chosen:
-                _chosen = _opts[0][1]
-            _EMOJI_MAP_CACHE[_emoji] = _chosen
-        # Add fallback entries for emojis not in Emoji.json
-        for _fb_emoji, _fb_cid in _EMOJI_FALLBACK.items():
-            if _fb_emoji not in _EMOJI_MAP_CACHE and _fb_cid:
-                _EMOJI_MAP_CACHE[_fb_emoji] = _fb_cid
-        # ★ Apply LUXURY overrides LAST so they take HIGHEST priority ★
-        _EMOJI_MAP_CACHE.update(_LUXURY_EMOJI_OVERRIDES)
-        _EMOJI_MAP_LOADED = True
-        logging.info(f"Loaded {len(_EMOJI_MAP_CACHE)} premium emojis from Emoji.json (incl. {len(_LUXURY_EMOJI_OVERRIDES)} luxury overrides)")
-    except Exception as _e:
-        logging.warning(f"Failed to load Emoji.json: {_e}")
-        # Still apply luxury overrides even if Emoji.json fails
-        _EMOJI_MAP_CACHE.update(_LUXURY_EMOJI_OVERRIDES)
-        _EMOJI_MAP_LOADED = True
+    """Emoji map is already loaded (hardcoded). No file needed."""
     return _EMOJI_MAP_CACHE
 
 def e(base_emoji):
     """Wrap ANY plain emoji with a premium custom Telegram emoji.
-    LUXURY emojis (40 hand-picked premium IDs) take highest priority.
+    Uses hardcoded IDs - no Emoji.json file needed.
     Falls back to the plain emoji if no mapping exists.
-    Usage in f-strings: f"{e('\\U0001F44D')} text"
     """
-    if not _EMOJI_MAP_LOADED:
-        _load_emoji_map()
     _cid = _EMOJI_MAP_CACHE.get(base_emoji)
     if _cid:
         return f'<tg-emoji emoji-id="{_cid}">{base_emoji}</tg-emoji>'
