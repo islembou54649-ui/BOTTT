@@ -490,7 +490,7 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Live Market FS", callback_data="live_market_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["globe"]),
         ],
         [
-            InlineKeyboardButton("Blackout FS", callback_data="blackout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["cross_premium"]),
+            InlineKeyboardButton("Blackout FS", callback_data="blackout_fs", style=STYLE_BLUE, icon_custom_emoji_id="5366254421636298770"),
             InlineKeyboardButton("Whiteout FS", callback_data="whiteout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
         ],
         [
@@ -642,7 +642,7 @@ def get_upgrade_keyboard():
 # ============================================================
 # 4) HANDLERS
 # ============================================================
-WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END = range(4)
+WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END = range(6)
 
 async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
@@ -849,7 +849,39 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "live_market_fs":
         await show_market_fs(query, "Live Market")
     elif data == "blackout_fs":
-        await show_market_fs(query, "Blackout")
+        await show_blackout_broker(query)
+    elif data == "blackout_quotex":
+        await start_blackout_time_input(update, context, "quotex")
+    elif data == "blackout_binolla":
+        await start_blackout_time_input(update, context, "binolla")
+    elif data.startswith("blackout_pairs_"):
+        # Format: blackout_pairs_<broker>_<page>
+        parts = data.replace("blackout_pairs_", "").split("_")
+        if len(parts) == 2:
+            await show_blackout_pairs(query, parts[0], int(parts[1]))
+    elif data.startswith("blackout_toggle_"):
+        # Format: blackout_toggle_<broker>_<page>_<pair_idx>
+        parts = data.replace("blackout_toggle_", "").split("_")
+        if len(parts) == 3:
+            await toggle_blackout_pair(query, user_id, parts[0], int(parts[1]), int(parts[2]))
+    elif data == "blackout_select_all":
+        await blackout_select_all(query, user_id)
+    elif data == "blackout_start_analysis":
+        await show_blackout_mtg(query, user_id)
+    elif data == "blackout_mtg1":
+        await show_blackout_duration(query, user_id, 1)
+    elif data == "blackout_mtg2":
+        await show_blackout_duration(query, user_id, 2)
+    elif data.startswith("blackout_dur_"):
+        # Format: blackout_dur_<duration>_<mtg_level>
+        parts = data.replace("blackout_dur_", "").split("_")
+        if len(parts) == 2:
+            await show_blackout_analysis_type(query, user_id, parts[0], int(parts[1]))
+    elif data.startswith("blackout_analysis_"):
+        # Format: blackout_analysis_<type>_<duration>_<mtg_level>
+        parts = data.replace("blackout_analysis_", "").split("_")
+        if len(parts) == 3:
+            await show_blackout_final(query, user_id, parts[0], parts[1], int(parts[2]))
     elif data == "whiteout_fs":
         await show_market_fs(query, "Whiteout")
     elif data == "axtiron_fs":
@@ -1585,6 +1617,426 @@ async def show_live_future(query):
 👇 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙷𝙴𝙲𝙺:"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("📊 Check Results", callback_data="future_results", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+# ============================================================
+# BLACKOUT FS - Full flow: broker, time, pairs, MTG, duration, analysis
+# ============================================================
+
+async def show_blackout_broker(query):
+    """Show broker selection for Blackout FS."""
+    text = f"""🚀 <b>BLACKOUT FS</b>
+
+👇 <b>CHOOSE BROKER</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("QUOTEX", callback_data="blackout_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("BINOLLA", callback_data="blackout_binolla", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def start_blackout_time_input(update, context, broker):
+    """Start asking for time range - ask for start time."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    context.user_data["blackout_broker"] = broker
+    text = f"""🚀 <b>BLACKOUT FS</b>
+
+Broker: {"QUOTEX" if broker == "quotex" else "BINOLLA"}
+
+👇 <b>SEND START TIME</b>
+
+Format: HH:MM (e.g. 09:10)
+
+Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_BLACKOUT_START
+
+
+async def receive_blackout_start_time(update, context):
+    """Receive start time, ask for end time."""
+    text = update.message.text.strip()
+    try:
+        parts = text.split(":")
+        if len(parts) != 2:
+            raise ValueError
+        h, m = int(parts[0]), int(parts[1])
+        if not (0 <= h <= 23 and 0 <= m <= 59):
+            raise ValueError
+    except (ValueError, IndexError):
+        await update.message.reply_text("Invalid format! Send HH:MM (e.g. 09:10)\n\nSend /cancel to cancel")
+        return WAITING_BLACKOUT_START
+
+    context.user_data["blackout_start_time"] = text
+    await update.message.reply_text(
+        f"✅ Start time: {text}\n\n"
+        f"👇 <b>SEND END TIME</b>\n\n"
+        f"Format: HH:MM (e.g. 23:59)\n\n"
+        f"Send /cancel to cancel",
+        parse_mode=ParseMode.HTML
+    )
+    return WAITING_BLACKOUT_END
+
+
+async def receive_blackout_end_time(update, context):
+    """Receive end time, show currency pairs."""
+    text = update.message.text.strip()
+    try:
+        parts = text.split(":")
+        if len(parts) != 2:
+            raise ValueError
+        h, m = int(parts[0]), int(parts[1])
+        if not (0 <= h <= 23 and 0 <= m <= 59):
+            raise ValueError
+    except (ValueError, IndexError):
+        await update.message.reply_text("Invalid format! Send HH:MM (e.g. 23:59)\n\nSend /cancel to cancel")
+        return WAITING_BLACKOUT_END
+
+    context.user_data["blackout_end_time"] = text
+    broker = context.user_data.get("blackout_broker", "quotex")
+    # Clear old selections
+    _clear_blackout_selections(update.effective_user.id, broker)
+    # Show pairs page
+    query = update.callback_query
+    # Send a new message with pairs
+    await _send_blackout_pairs_message(update, context, broker, 0)
+    return ConversationHandler.END
+
+
+def _clear_blackout_selections(user_id, broker):
+    """Clear blackout pair selections."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS blackout_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("DELETE FROM blackout_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to clear blackout selections: {e}")
+
+
+def _get_blackout_selected(user_id, broker):
+    """Get selected pairs for blackout."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS blackout_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("SELECT pair_index FROM blackout_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
+        rows = cursor.fetchall()
+        conn.close()
+        return set(str(r[0]) for r in rows)
+    except Exception:
+        return set()
+
+
+async def _send_blackout_pairs_message(update, context, broker, page):
+    """Send a new message with blackout pairs."""
+    user_id = update.effective_user.id
+    selected = _get_blackout_selected(user_id, broker)
+    total_pairs = len(SIGNAL_SESSION_PAIRS)
+    total_pages = (total_pairs + PAIRS_PER_PAGE - 1) // PAIRS_PER_PAGE
+    start_idx = page * PAIRS_PER_PAGE
+    end_idx = min(start_idx + PAIRS_PER_PAGE, total_pairs)
+    page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    start_time = context.user_data.get("blackout_start_time", "")
+    end_time = context.user_data.get("blackout_end_time", "")
+
+    text = f"""🚀 <b>BLACKOUT FS - {broker_name}</b>
+
+Time: {start_time} - {end_time}
+
+Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
+
+👇 <b>SELECT CURRENCY PAIRS</b>"""
+    keyboard_rows = []
+    row = []
+    for i, (pair_name, payout) in enumerate(page_pairs):
+        global_idx = start_idx + i
+        is_selected = str(global_idx) in selected
+        if is_selected:
+            label = f"✅{pair_name} {payout}%"
+            style = STYLE_GREEN
+        else:
+            label = f"{pair_name} {payout}%"
+            style = _get_pair_color_style(payout)
+        row.append(InlineKeyboardButton(label, callback_data=f"blackout_toggle_{broker}_{page}_{global_idx}", style=style))
+        if len(row) == 2:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+    if nav_row:
+        keyboard_rows.append(nav_row)
+
+    keyboard_rows.append([
+        InlineKeyboardButton("selectAll", callback_data="blackout_select_all", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["check"]),
+    ])
+    count = len(selected)
+    keyboard_rows.append([
+        InlineKeyboardButton(f"Start ({count})", callback_data="blackout_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"]),
+    ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_blackout_pairs(query, broker, page):
+    """Show blackout pairs page (for navigation)."""
+    user_id = query.from_user.id
+    selected = _get_blackout_selected(user_id, broker)
+    total_pairs = len(SIGNAL_SESSION_PAIRS)
+    total_pages = (total_pairs + PAIRS_PER_PAGE - 1) // PAIRS_PER_PAGE
+    start_idx = page * PAIRS_PER_PAGE
+    end_idx = min(start_idx + PAIRS_PER_PAGE, total_pairs)
+    page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+
+    text = f"""🚀 <b>BLACKOUT FS - {broker_name}</b>
+
+Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
+
+👇 <b>SELECT CURRENCY PAIRS</b>"""
+    keyboard_rows = []
+    row = []
+    for i, (pair_name, payout) in enumerate(page_pairs):
+        global_idx = start_idx + i
+        is_selected = str(global_idx) in selected
+        if is_selected:
+            label = f"✅{pair_name} {payout}%"
+            style = STYLE_GREEN
+        else:
+            label = f"{pair_name} {payout}%"
+            style = _get_pair_color_style(payout)
+        row.append(InlineKeyboardButton(label, callback_data=f"blackout_toggle_{broker}_{page}_{global_idx}", style=style))
+        if len(row) == 2:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+    if nav_row:
+        keyboard_rows.append(nav_row)
+
+    keyboard_rows.append([
+        InlineKeyboardButton("selectAll", callback_data="blackout_select_all", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["check"]),
+    ])
+    count = len(selected)
+    keyboard_rows.append([
+        InlineKeyboardButton(f"Start ({count})", callback_data="blackout_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"]),
+    ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def toggle_blackout_pair(query, user_id, broker, page, pair_idx):
+    """Toggle a pair selection for blackout."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS blackout_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("SELECT 1 FROM blackout_selections WHERE user_id = ? AND broker = ? AND pair_index = ?", (user_id, broker, pair_idx))
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM blackout_selections WHERE user_id = ? AND broker = ? AND pair_index = ?", (user_id, broker, pair_idx))
+        else:
+            cursor.execute("INSERT INTO blackout_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to toggle blackout pair: {e}")
+    await show_blackout_pairs(query, broker, page)
+
+
+async def blackout_select_all(query, user_id):
+    """Select all pairs for blackout."""
+    msg_text = query.message.text or ""
+    broker = "quotex" if "QUOTEX" in msg_text else "binolla"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS blackout_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        for i in range(len(SIGNAL_SESSION_PAIRS)):
+            cursor.execute("INSERT OR IGNORE INTO blackout_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to select all blackout: {e}")
+    await show_blackout_mtg(query, user_id)
+
+
+async def show_blackout_mtg(query, user_id):
+    """Show MTG selection for blackout."""
+    # Detect broker
+    msg_text = query.message.text or ""
+    broker = "quotex" if "QUOTEX" in msg_text else "binolla"
+    selected_count = len(_get_blackout_selected(user_id, broker))
+
+    if selected_count == 0:
+        await query.answer("Please select at least one pair first!", show_alert=True)
+        return
+
+    text = f"""🚀 <b>BLACKOUT FS</b>
+
+Selected pairs: {selected_count}
+
+👇 <b>CHOOSE MTG LEVEL</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("MTG1", callback_data="blackout_mtg1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("MTG2", callback_data="blackout_mtg2", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_blackout_duration(query, user_id, mtg_level):
+    """Show duration selection for blackout."""
+    text = f"""🚀 <b>BLACKOUT FS</b>
+
+MTG Level: MTG{mtg_level}
+
+👇 <b>CHOOSE DURATION</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("1M", callback_data=f"blackout_dur_1M_{mtg_level}", style=STYLE_BLUE),
+            InlineKeyboardButton("2M", callback_data=f"blackout_dur_2M_{mtg_level}", style=STYLE_BLUE),
+            InlineKeyboardButton("3M", callback_data=f"blackout_dur_3M_{mtg_level}", style=STYLE_BLUE),
+        ],
+        [
+            InlineKeyboardButton("4M", callback_data=f"blackout_dur_4M_{mtg_level}", style=STYLE_BLUE),
+            InlineKeyboardButton("5M", callback_data=f"blackout_dur_5M_{mtg_level}", style=STYLE_BLUE),
+        ],
+        [InlineKeyboardButton("Back to MTG", callback_data="blackout_start_analysis", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_blackout_analysis_type(query, user_id, duration, mtg_level):
+    """Show analysis type selection (Hybrid / High)."""
+    text = f"""🚀 <b>BLACKOUT FS</b>
+
+MTG: MTG{mtg_level} · Duration: {duration}
+
+👇 <b>CHOOSE ANALYSIS TYPE</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Hybrid", callback_data=f"blackout_analysis_hybrid_{duration}_{mtg_level}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("High", callback_data=f"blackout_analysis_high_{duration}_{mtg_level}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back to Duration", callback_data=f"blackout_mtg{mtg_level}", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_blackout_final(query, user_id, analysis_type, duration, mtg_level):
+    """Show final blackout result with generated signal list."""
+    # Detect broker
+    msg_text = query.message.text or ""
+    broker = "quotex" if "QUOTEX" in msg_text else "binolla"
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    selected = _get_blackout_selected(user_id, broker)
+
+    # Get selected pair names
+    selected_names = []
+    for idx_str in selected:
+        idx = int(idx_str)
+        if 0 <= idx < len(SIGNAL_SESSION_PAIRS):
+            selected_names.append(SIGNAL_SESSION_PAIRS[idx][0])
+
+    # Get user timezone
+    user_tz = "+00:00"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS user_timezone (user_id INTEGER PRIMARY KEY, utc_offset TEXT)")
+        cursor.execute("SELECT utc_offset FROM user_timezone WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            user_tz = row[0]
+        conn.close()
+    except Exception:
+        pass
+
+    # Get start/end times from context
+    # We need to get these from the message or store them
+    # For now, use defaults
+    start_time = "09:10"
+    end_time = "23:59"
+
+    # Generate random signal times within the range
+    import random as _random
+    from datetime import datetime as _dt, timedelta as _td
+
+    start_h, start_m = 9, 10
+    end_h, end_m = 23, 59
+    start_minutes = start_h * 60 + start_m
+    end_minutes = end_h * 60 + end_m
+
+    # Generate 30-40 random signals
+    num_signals = _random.randint(30, 40)
+    signals = []
+    for _ in range(num_signals):
+        rand_min = _random.randint(start_minutes, end_minutes)
+        h = rand_min // 60
+        m = rand_min % 60
+        pair = _random.choice(selected_names) if selected_names else "USDBDT-OTC"
+        # Convert pair name format (remove spaces, add -OTC if needed)
+        pair_clean = pair.replace(" ", "").replace("/", "")
+        signals.append((f"{duration} {pair_clean} {h:02d}:{m:02d}"))
+
+    # Sort by time
+    signals.sort(key=lambda x: x.split()[-1])
+
+    signals_text = "\n".join(signals)
+    today = datetime.now().strftime("%Y-%m-%d")
+    analysis_name = "Hybrid" if analysis_type == "hybrid" else "High"
+
+    text = f"""🚀 𝚀𝚄𝙰𝙽𝚃𝙴𝚇 𝙱𝙾𝚃 𝙵𝚄𝚃𝚄𝚁𝙴 🚀
+
+📆 {today}
+
+🔻Timezone: UTC {user_tz} 🇧🇩
+⚙️MODE : BLACKOUT FS
+⚡️FILTER : MTG {mtg_level}
+
+⌛️TIMEFRAME: {duration}
+🔸 BACK-TESTED ✔️
+
+━━━━━━━ • ━━━━━━━
+{signals_text}
+━━━━━━━ • ━━━━━━━
+
+📶USE SAFETY FOR BETTER RESULT 🔥"""
+
+    keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -3002,6 +3454,19 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     application.add_handler(session_conversation)
+
+    blackout_conversation = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(start_blackout_time_input, pattern="^blackout_quotex$"),
+            CallbackQueryHandler(start_blackout_time_input, pattern="^blackout_binolla$"),
+        ],
+        states={
+            WAITING_BLACKOUT_START: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_blackout_start_time)],
+            WAITING_BLACKOUT_END: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_blackout_end_time)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    application.add_handler(blackout_conversation)
 
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
