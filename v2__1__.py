@@ -493,6 +493,9 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Blackout FS", callback_data="blackout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["cross_premium"]),
             InlineKeyboardButton("Whiteout FS", callback_data="whiteout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
         ],
+        [
+            InlineKeyboardButton("Axtiron FS", callback_data="axtiron_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
+        ],
         # === Payouts ===
         [
             InlineKeyboardButton("Top Payout", callback_data="top_payout", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["money"]),
@@ -849,6 +852,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_market_fs(query, "Blackout")
     elif data == "whiteout_fs":
         await show_market_fs(query, "Whiteout")
+    elif data == "axtiron_fs":
+        await show_market_fs(query, "Axtiron")
     elif data == "future_live":
         await show_future_live(query)
     elif data == "live_signal":
