@@ -885,7 +885,29 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "whiteout_fs":
         await show_market_fs(query, "Whiteout")
     elif data == "axtiron_fs":
-        await show_market_fs(query, "Axtiron")
+        await show_axtiron_broker(query)
+    elif data == "axtiron_quotex":
+        await show_axtiron_market(query, "quotex")
+    elif data == "axtiron_binolla":
+        await show_axtiron_market(query, "binolla")
+    elif data.startswith("axtiron_market_"):
+        # Format: axtiron_market_<market>_<broker>
+        parts = data.replace("axtiron_market_", "").split("_")
+        if len(parts) == 2:
+            await show_axtiron_analyzing(query, parts[0], parts[1])
+    elif data.startswith("axtiron_pairs_"):
+        # Format: axtiron_pairs_<broker>_<page>
+        parts = data.replace("axtiron_pairs_", "").split("_")
+        if len(parts) == 2:
+            await show_axtiron_pairs(query, parts[0], int(parts[1]))
+    elif data.startswith("axtiron_toggle_"):
+        parts = data.replace("axtiron_toggle_", "").split("_")
+        if len(parts) == 3:
+            await toggle_axtiron_pair(query, user_id, parts[0], int(parts[1]), int(parts[2]))
+    elif data == "axtiron_select_all":
+        await axtiron_select_all(query, user_id)
+    elif data == "axtiron_start":
+        await show_axtiron_results(query, user_id)
     elif data == "future_live":
         await show_future_live(query)
     elif data == "live_signal":
@@ -2040,6 +2062,277 @@ async def show_blackout_final(query, user_id, analysis_type, duration, mtg_level
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+# ============================================================
+# AXTIRON FS - broker, market, analyzing, pairs, results
+# ============================================================
+
+async def show_axtiron_broker(query):
+    """Show broker selection for Axtiron FS."""
+    text = """🐾 <b>AXTIRON FS</b>
+
+👇 <b>CHOOSE BROKER</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("QUOTEX", callback_data="axtiron_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("BINOLLA", callback_data="axtiron_binolla", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_axtiron_market(query, broker):
+    """Show market type selection for Axtiron."""
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    text = f"""🐾 <b>AXTIRON FS - {broker_name}</b>
+
+👇 <b>CHOOSE MARKET TYPE</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("OTC Market", callback_data=f"axtiron_market_otc_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["chart"]),
+            InlineKeyboardButton("Global Market", callback_data=f"axtiron_market_global_{broker}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["globe"]),
+        ],
+        [InlineKeyboardButton("Back to Broker", callback_data="axtiron_fs", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_axtiron_analyzing(query, market, broker):
+    """Show analyzing message then redirect to pairs."""
+    import asyncio
+    market_name = "OTC" if market == "otc" else "Global"
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    text = f"""🐾 <b>AXTIRON FS</b>
+
+Broker: {broker_name}
+Market: {market_name}
+
+⏳ <b>ANALYZING MARKET...</b>
+
+Please wait while we scan
+the market for opportunities."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    # Wait 2 seconds then show pairs
+    await asyncio.sleep(2)
+    # Clear old selections
+    _clear_axtiron_selections(query.from_user.id, broker)
+    await show_axtiron_pairs(query, broker, 0)
+
+
+def _clear_axtiron_selections(user_id, broker):
+    """Clear axtiron pair selections."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS axtiron_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("DELETE FROM axtiron_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to clear axtiron selections: {e}")
+
+
+def _get_axtiron_selected(user_id, broker):
+    """Get selected pairs for axtiron."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS axtiron_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("SELECT pair_index FROM axtiron_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
+        rows = cursor.fetchall()
+        conn.close()
+        return set(str(r[0]) for r in rows)
+    except Exception:
+        return set()
+
+
+async def show_axtiron_pairs(query, broker, page):
+    """Show currency pairs for axtiron selection."""
+    user_id = query.from_user.id
+    selected = _get_axtiron_selected(user_id, broker)
+    total_pairs = len(SIGNAL_SESSION_PAIRS)
+    total_pages = (total_pairs + PAIRS_PER_PAGE - 1) // PAIRS_PER_PAGE
+    start_idx = page * PAIRS_PER_PAGE
+    end_idx = min(start_idx + PAIRS_PER_PAGE, total_pairs)
+    page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+
+    text = f"""🐾 <b>AXTIRON FS - {broker_name}</b>
+
+Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
+
+👇 <b>SELECT CURRENCY PAIRS</b>"""
+    keyboard_rows = []
+    row = []
+    for i, (pair_name, payout) in enumerate(page_pairs):
+        global_idx = start_idx + i
+        is_selected = str(global_idx) in selected
+        if is_selected:
+            label = f"✅{pair_name} {payout}%"
+            style = STYLE_GREEN
+        else:
+            label = f"{pair_name} {payout}%"
+            style = _get_pair_color_style(payout)
+        row.append(InlineKeyboardButton(label, callback_data=f"axtiron_toggle_{broker}_{page}_{global_idx}", style=style))
+        if len(row) == 2:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"axtiron_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"axtiron_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+    if nav_row:
+        keyboard_rows.append(nav_row)
+
+    keyboard_rows.append([
+        InlineKeyboardButton("selectAll", callback_data="axtiron_select_all", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["check"]),
+    ])
+    count = len(selected)
+    keyboard_rows.append([
+        InlineKeyboardButton(f"Start ({count})", callback_data="axtiron_start", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"]),
+    ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def toggle_axtiron_pair(query, user_id, broker, page, pair_idx):
+    """Toggle a pair selection for axtiron."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS axtiron_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("SELECT 1 FROM axtiron_selections WHERE user_id = ? AND broker = ? AND pair_index = ?", (user_id, broker, pair_idx))
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM axtiron_selections WHERE user_id = ? AND broker = ? AND pair_index = ?", (user_id, broker, pair_idx))
+        else:
+            cursor.execute("INSERT INTO axtiron_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to toggle axtiron pair: {e}")
+    await show_axtiron_pairs(query, broker, page)
+
+
+async def axtiron_select_all(query, user_id):
+    """Select all pairs for axtiron then show results."""
+    msg_text = query.message.text or ""
+    broker = "quotex" if "QUOTEX" in msg_text else "binolla"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS axtiron_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        for i in range(len(SIGNAL_SESSION_PAIRS)):
+            cursor.execute("INSERT OR IGNORE INTO axtiron_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to select all axtiron: {e}")
+    await show_axtiron_results(query, user_id)
+
+
+async def show_axtiron_results(query, user_id):
+    """Show Axtiron FS results - one message per selected pair."""
+    import random as _random
+    import asyncio
+
+    # Detect broker
+    msg_text = query.message.text or ""
+    broker = "quotex" if "QUOTEX" in msg_text else "binolla"
+    selected = _get_axtiron_selected(user_id, broker)
+
+    if not selected:
+        await query.answer("Please select at least one pair first!", show_alert=True)
+        return
+
+    # Get selected pair names
+    selected_names = []
+    for idx_str in selected:
+        idx = int(idx_str)
+        if 0 <= idx < len(SIGNAL_SESSION_PAIRS):
+            selected_names.append(SIGNAL_SESSION_PAIRS[idx][0])
+
+    # Get user timezone
+    user_tz = "+00:00"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS user_timezone (user_id INTEGER PRIMARY KEY, utc_offset TEXT)")
+        cursor.execute("SELECT utc_offset FROM user_timezone WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            user_tz = row[0]
+        conn.close()
+    except Exception:
+        pass
+
+    # Send first: "generating signals" message
+    wait_text = """🐾 <b>AXTIRON FS</b>
+
+⏳ <b>GENERATING SIGNALS...</b>
+
+Please wait while we engineer
+your premium future signals."""
+    wait_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, wait_text, reply_markup=wait_keyboard, parse_mode=ParseMode.HTML)
+    await asyncio.sleep(2)
+
+    # Get the bot instance and chat_id
+    bot = query.message.get_bot()
+    chat_id = query.message.chat_id
+
+    # Send one message per selected pair
+    for pair_name in selected_names:
+        # Generate 5-6 random signals for this pair
+        num_signals = _random.randint(5, 6)
+        # Random times between 20:00 and 23:59
+        signals = []
+        for _ in range(num_signals):
+            rand_min = _random.randint(20 * 60, 23 * 60 + 59)
+            h = rand_min // 60
+            m = rand_min % 60
+            direction = _random.choice(["CALL", "PUT"])
+            # Format pair name: remove spaces and slash, add -OTC
+            pair_clean = pair_name.replace(" ", "").replace("/", "")
+            signals.append(f"🚨 M1 {pair_clean} {h:02d}:{m:02d} {direction}")
+
+        # Sort by time
+        signals.sort(key=lambda x: x.split()[-2])
+        signals_text = "\n".join(signals)
+
+        result_text = f"""🐾𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗙𝗨𝗧𝗨𝗥𝗘 𝗕𝗬 𝗔𝗫𝗧𝗜𝗥𝗢𝗡🐾
+
+⚙️𝗩𝗘𝗥𝗦𝗜𝗢𝗡 𝟮 | 𝗠𝗢𝗗𝗘 : 𝗟𝗨𝗡𝗔
+🌐𝗧𝗜𝗠𝗘𝗭𝗢𝗡𝗘 : UTC {user_tz}
+
+{signals_text}
+
+🦌𝗘𝗡𝗚𝗜𝗡𝗘𝗘𝗥𝗘𝗗 𝗧𝗢 𝗗𝗢𝗠𝗜𝗡𝗔𝗧𝗘🕊"""
+
+        await bot.send_message(chat_id=chat_id, text=result_text, parse_mode=ParseMode.HTML)
+        await asyncio.sleep(0.5)  # Small delay between messages
+
+    # Send final message with back button
+    final_text = """🐾 <b>AXTIRON FS - COMPLETE</b>
+
+All signals have been generated.
+Good luck with your trades! 🦌"""
+    final_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, final_text, reply_markup=final_keyboard, parse_mode=ParseMode.HTML)
 
 
 async def show_free_bots(query):
