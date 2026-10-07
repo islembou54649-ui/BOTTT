@@ -563,10 +563,6 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("TZ Converter", callback_data="tz_converter", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["alarm"]),
             InlineKeyboardButton("Plans", url=WEBAPP_PLANS_URL, style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["diamond"]),
         ],
-        [
-            InlineKeyboardButton("Swap C/P", callback_data="swap_cp", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swap"]),
-            InlineKeyboardButton("Formatter", callback_data="formatter", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swirl"]),
-        ],
         # === Plans & Upgrade ===
         [
             InlineKeyboardButton("Upgrade", callback_data="upgrade", style=STYLE_BLUE, icon_custom_emoji_id="5217880283860194582"),
@@ -587,8 +583,11 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Support", url=SUPPORT_URL, style=STYLE_BLUE, icon_custom_emoji_id="5215334566549540768"),
             InlineKeyboardButton("Support Web", url=WEBAPP_SUPPORT_URL, style=STYLE_BLUE, icon_custom_emoji_id="5463090760041634232"),
         ],
-        # === Admin ===
-        [InlineKeyboardButton("Bot Control", url=WEBAPP_BOTS_URL, style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["tools"])],
+        # === Admin & Tools (paired) ===
+        [
+            InlineKeyboardButton("Bot Control", url=WEBAPP_BOTS_URL, style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["tools"]),
+            InlineKeyboardButton("Formatter", callback_data="formatter", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swirl"]),
+        ],
         # === Final: 2 GREEN then 1 GREEN ===
         [
             InlineKeyboardButton("My Profile", callback_data="my_account", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["user"]),
