@@ -697,13 +697,13 @@ async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
     try:
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
-    except Exception as e:
-        err_str = str(e)
+    except Exception as exc:
+        err_str = str(exc)
         if "Message is not modified" in err_str or "exactly the same" in err_str:
             # Content is the same - this is OK, just skip
             pass
         else:
-            logging.warning(f"edit_message_text error: {e}")
+            logging.warning(f"edit_message_text error: {exc}")
             try:
                 await query.answer("Loading...", show_alert=False)
             except Exception:
@@ -1386,8 +1386,8 @@ def _clear_user_selections(user_id: int, broker: str):
         cursor.execute("DELETE FROM signal_session_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to clear selections: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to clear selections: {exc}")
 
 
 async def show_signal_session_broker(query):
@@ -1506,8 +1506,8 @@ async def toggle_signal_session_pair(query, user_id, broker, page, pair_idx):
             cursor.execute("INSERT INTO signal_session_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to toggle pair: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to toggle pair: {exc}")
     # Refresh the page
     await show_signal_session_pairs(query, broker, page)
 
@@ -1524,8 +1524,8 @@ async def signal_session_select_page(query, user_id, broker, page):
             cursor.execute("INSERT OR IGNORE INTO signal_session_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to select page: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to select page: {exc}")
     # Go directly to MTG selection (not back to pairs page)
     await show_signal_session_mtg(query, user_id)
 
@@ -1544,8 +1544,8 @@ async def signal_session_select_all(query, user_id):
             cursor.execute("INSERT OR IGNORE INTO signal_session_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to select all: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to select all: {exc}")
     # Go directly to MTG selection (not back to pairs page)
     await show_signal_session_mtg(query, user_id)
 
@@ -1629,8 +1629,8 @@ async def start_signal_session_analysis(query, user_id, mtg_level, duration="1M"
                        (user_id, broker, pairs_json, mtg_level, duration, datetime.now().isoformat()))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to save session: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to save session: {exc}")
 
     pairs_count = len(selected_pairs)
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
@@ -1798,8 +1798,8 @@ async def save_session(query, context):
         cursor.execute("INSERT INTO time_sessions (user_id, start_time, end_time, enabled) VALUES (?, ?, ?, 1)", (user_id, start_time, end_time))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to save session: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to save session: {exc}")
 
     # Clear user data
     context.user_data.pop("session_start", None)
@@ -1841,8 +1841,8 @@ def _clear_lm_selections(user_id):
         cursor.execute("DELETE FROM lm_selections WHERE user_id = ?", (user_id,))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to clear LM selections: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to clear LM selections: {exc}")
 
 def _get_lm_selected(user_id):
     try:
@@ -1923,8 +1923,8 @@ async def toggle_live_market_pair(query, user_id, page, pair_idx):
             cursor.execute("INSERT INTO lm_selections (user_id, pair_index) VALUES (?, ?)", (user_id, pair_idx))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to toggle LM pair: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to toggle LM pair: {exc}")
     await show_live_market_pairs(query, page)
 
 async def live_market_select_all(query, user_id):
@@ -1936,8 +1936,8 @@ async def live_market_select_all(query, user_id):
             cursor.execute("INSERT OR IGNORE INTO lm_selections (user_id, pair_index) VALUES (?, ?)", (user_id, i))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to select all LM: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to select all LM: {exc}")
     await show_live_market_direction(query, user_id)
 
 async def show_live_market_direction(query, user_id):
@@ -2201,8 +2201,8 @@ def _clear_otc_selections(user_id, broker):
         cursor.execute("DELETE FROM otc_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to clear OTC selections: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to clear OTC selections: {exc}")
 
 
 def _get_otc_selected(user_id, broker):
@@ -2346,8 +2346,8 @@ async def toggle_otc_pair(query, user_id, broker, page, pair_idx):
             cursor.execute("INSERT INTO otc_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to toggle OTC pair: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to toggle OTC pair: {exc}")
     await show_otc_pairs(query, broker, page)
 
 
@@ -2363,8 +2363,8 @@ async def otc_select_all(query, user_id):
             cursor.execute("INSERT OR IGNORE INTO otc_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to select all OTC: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to select all OTC: {exc}")
     await show_otc_direction(query, user_id)
 
 
@@ -2683,8 +2683,8 @@ def _clear_blackout_selections(user_id, broker):
         cursor.execute("DELETE FROM blackout_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to clear blackout selections: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to clear blackout selections: {exc}")
 
 
 def _get_blackout_selected(user_id, broker):
@@ -2828,8 +2828,8 @@ async def toggle_blackout_pair(query, user_id, broker, page, pair_idx):
             cursor.execute("INSERT INTO blackout_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to toggle blackout pair: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to toggle blackout pair: {exc}")
     await show_blackout_pairs(query, broker, page)
 
 
@@ -2845,8 +2845,8 @@ async def blackout_select_all(query, user_id):
             cursor.execute("INSERT OR IGNORE INTO blackout_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to select all blackout: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to select all blackout: {exc}")
     await show_blackout_mtg(query, user_id)
 
 
@@ -3077,8 +3077,8 @@ def _clear_axtiron_selections(user_id, broker):
         cursor.execute("DELETE FROM axtiron_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to clear axtiron selections: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to clear axtiron selections: {exc}")
 
 
 def _get_axtiron_selected(user_id, broker):
@@ -3163,8 +3163,8 @@ async def toggle_axtiron_pair(query, user_id, broker, page, pair_idx):
             cursor.execute("INSERT INTO axtiron_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to toggle axtiron pair: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to toggle axtiron pair: {exc}")
     await show_axtiron_pairs(query, broker, page)
 
 
@@ -3180,8 +3180,8 @@ async def axtiron_select_all(query, user_id):
             cursor.execute("INSERT OR IGNORE INTO axtiron_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to select all axtiron: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to select all axtiron: {exc}")
     await show_axtiron_results(query, user_id)
 
 
@@ -3681,7 +3681,7 @@ async def submit_rating(query, stars):
     """Handle the user's rating submission."""
     stars_int = int(stars)
     # Build star display
-    star_display = "{e('⭐')}" * stars_int
+    star_display = e('⭐') * stars_int
     # Log the rating
     user_id = query.from_user.id
     user_name = query.from_user.first_name or "User"
@@ -3695,8 +3695,8 @@ async def submit_rating(query, stars):
         cursor.execute("INSERT INTO ratings (user_id, stars, date) VALUES (?, ?, ?)", (user_id, stars_int, datetime.now().isoformat()))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to save rating: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to save rating: {exc}")
 
     # Thank you message
     thanks_messages = {
@@ -3704,7 +3704,7 @@ async def submit_rating(query, stars):
         2: "Thank you for your feedback. We'll work hard to improve!",
         3: "Thanks for your rating! We're glad you're satisfied.",
         4: "Thank you! We're happy you had a great experience!",
-        5: "Wow, thank you so much for the 5-star rating! We're thrilled! {e('🎉')}",
+        5: f"Wow, thank you so much for the 5-star rating! We're thrilled! {e('🎉')}",
     }
     msg = thanks_messages.get(stars_int, "Thank you for your rating!")
 
@@ -3894,8 +3894,8 @@ def _save_user_setting(user_id: int, key: str, value: str):
             cursor.execute(f"INSERT INTO user_settings (user_id, {key}) VALUES (?, ?)", (user_id, value))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to save setting: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to save setting: {exc}")
 
 
 async def settings_change_platform(query, user_id):
@@ -4951,14 +4951,14 @@ async def _auto_update_live_payouts_loop(bot, chat_id, message_id, broker):
                 reply_markup=keyboard,
                 parse_mode=ParseMode.HTML,
             )
-        except Exception as e:
-            err_str = str(e)
+        except Exception as exc:
+            err_str = str(exc)
             if "Message is not modified" in err_str or "message is not modified" in err_str.lower():
                 continue
             elif "not found" in err_str.lower() or "deleted" in err_str.lower():
                 break  # Message deleted or user navigated away
             else:
-                logging.warning(f"Auto-update live payouts error: {e}")
+                logging.warning(f"Auto-update live payouts error: {exc}")
                 break
 
 async def show_news_signal(query):
@@ -5574,8 +5574,8 @@ async def set_user_timezone(query, user_id, utc_offset):
         cursor.execute("INSERT OR REPLACE INTO user_timezone (user_id, utc_offset) VALUES (?, ?)", (user_id, utc_offset))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to save timezone: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to save timezone: {exc}")
 
     text = f"""{e('✅')} 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆 𝑼𝒑𝒅𝒂𝒕𝒆𝒅!
 
@@ -5604,8 +5604,8 @@ async def set_user_schedule(query, user_id, start_time, end_time):
         cursor.execute("INSERT OR REPLACE INTO user_schedule (user_id, start_time, end_time, enabled) VALUES (?, ?, ?, 1)", (user_id, start_time, end_time))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to save schedule: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to save schedule: {exc}")
 
     text = f"""{e('✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒆𝒕 𝑺𝒖𝒄𝒄𝒆𝒔𝒔𝒇𝒖𝒍𝒍𝒚!
 
@@ -5632,8 +5632,8 @@ async def pause_user_schedule(query, user_id):
         cursor.execute("UPDATE user_schedule SET enabled = 0 WHERE user_id = ?", (user_id,))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to pause schedule: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to pause schedule: {exc}")
     await show_time_list(query)
 
 async def delete_user_schedule(query, user_id):
@@ -5644,8 +5644,8 @@ async def delete_user_schedule(query, user_id):
         cursor.execute("DELETE FROM user_schedule WHERE user_id = ?", (user_id,))
         conn.commit()
         conn.close()
-    except Exception as e:
-        logging.warning(f"Failed to delete schedule: {e}")
+    except Exception as exc:
+        logging.warning(f"Failed to delete schedule: {exc}")
 
     text = f"""{e('❌')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑫𝒆𝒍𝒆𝒕𝒆𝒅
 
@@ -5734,8 +5734,8 @@ async def admin_confirm_send(query, context):
     try:
         await context.bot.send_message(chat_id=SIGNALS_CHANNEL_ID, text=signal_text, parse_mode=ParseMode.HTML)
         success_msg = f"{e('✅')} Signal sent to channel successfully!"
-    except Exception as e:
-        success_msg = f"{e('❌')} Send failed: {str(e)}"
+    except Exception as exc:
+        success_msg = f"{e('❌')} Send failed: {str(exc)}"
 
     context.user_data.pop("pending_signal", None)
     await safe_edit_message(query, f"{success_msg}\n\nBack to control panel:", reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
