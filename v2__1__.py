@@ -695,7 +695,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["user_id"] = user_id
     welcome_text = get_welcome_message(user.first_name)
     if referrer_id:
-        welcome_text += f"\n{emj('gift', '🎁')} You were referred by a friend!"
+        welcome_text += f"\n{e('🎁')} You were referred by a friend!"
 
     await update.message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard(), parse_mode=ParseMode.HTML)
 
@@ -1004,23 +1004,23 @@ async def show_main_menu(query):
 
 async def show_plans(query):
     text = f"""
-{emj('diamond', '💎')} Subscription Plans {emj('diamond', '💎')}
+{e('💎')} Subscription Plans {e('💎')}
 
 Choose the plan that suits you from the list below:
 
-{emj('free', '🆓')} Free Plan - $0
+{e('🆓')} Free Plan - $0
 Duration: 7 days trial
 Limited basic features
 
-{emj('calendar', '📅')} Weekly Plan - $15
+{e('📅')} Weekly Plan - $15
 Duration: 7 full days
 Unlimited signals + instant alerts
 
-{emj('calendar', '📆')} Monthly Plan - $45
+{e('📆')} Monthly Plan - $45
 Duration: 30 days
 All features + advanced analytics
 
-{emj('crown', '👑')} Gold Plan - $120
+{e('👑')} Gold Plan - $120
 Duration: 90 days
 VIP features + personal account manager
 
@@ -1031,7 +1031,7 @@ Select a plan to view full details:
 async def show_plan_details(query, plan_key):
     plans_map = {"free": PLANS[0], "weekly": PLANS[1], "monthly": PLANS[2], "gold": PLANS[3]}
     plan = plans_map.get(plan_key, PLANS[0])
-    features_text = "\n".join([f"{emj('check', '✅')} {f}" for f in plan["features"]])
+    features_text = "\n".join([f"{e('✅')} {f}" for f in plan["features"]])
     text = f"""
 📋 Plan Details
 
@@ -1039,7 +1039,7 @@ Name: {plan['name']}
 Price: {plan['price']}
 Duration: {plan['duration']}
 
-{emj('star', '⭐')} Included Features:
+{e('⭐')} Included Features:
 {features_text}
 
 💳 To subscribe to this plan:
@@ -1049,9 +1049,9 @@ Contact technical support via the Support button in the main menu
 
 async def show_request_signals(query):
     text = f"""
-{emj('lightning', '⚡')} Request Signals Now
+{e('⚡')} Request Signals Now
 
-{emj('robot', '🤖')} Select the platform you want signals from:
+{e('🤖')} Select the platform you want signals from:
 
 🟢 QUOTEX
   Best for binary options (OTC available)
@@ -1072,19 +1072,19 @@ async def show_bot_signals(query, platform):
     platform_info = platforms_info.get(platform, platforms_info["quotex"])
     signals_text = "\n\n".join([f"📊 {p[0]}\nDirection: {p[1]}\nEntry: {p[2]}\nExpiry: {p[3]}\nConfidence: {p[4]}" for p in platform_info["pairs"]])
     text = f"""
-{emj('robot', '🤖')} {platform_info['name']}
+{e('🤖')} {platform_info['name']}
 
-{emj('calendar', '📅')} Request Time: {now.strftime('%Y-%m-%d %H:%M:%S')}
-{emj('check', '✅')} Status: Active signals below
+{e('📅')} Request Time: {now.strftime('%Y-%m-%d %H:%M:%S')}
+{e('✅')} Status: Active signals below
 
 {signals_text}
 
 📈 Platform Summary:
 • Active pairs: {len(platform_info['pairs'])}
 • Avg confidence: 90%
-• Sentiment: Bullish {emj('chart', '📈')}
+• Sentiment: Bullish {e('📈')}
 
-{emj('warning', '⚠️')} Trade responsibly - Not financial advice
+{e('⚠️')} Trade responsibly - Not financial advice
 """
     await safe_edit_message(query, text, reply_markup=get_back_to_signal_keyboard(), parse_mode=ParseMode.HTML)
 
@@ -1092,12 +1092,12 @@ async def show_current_signals(query):
     signals = [("EUR/USD", "CALL", "1.0856", "M1", "92%"), ("GBP/JPY", "PUT", "189.42", "M5", "88%"), ("USD/JPY", "CALL", "149.78", "M1", "95%")]
     signals_text = "\n\n".join([f"📊 {s[0]}\nDirection: {s[1]}\nEntry: {s[2]}\nExpiry: {s[3]}\nExpected Rate: {s[4]}" for s in signals])
     text = f"""
-{emj('chart', '📈')} Live Current Signals
+{e('📈')} Live Current Signals
 
 {signals_text}
 
-{emj('clock', '⏰')} Last Update: {datetime.now().strftime('%H:%M:%S')}
-{emj('warning', '⚠️')} Trade responsibly - Signals are not a profit guarantee
+{e('⏰')} Last Update: {datetime.now().strftime('%H:%M:%S')}
+{e('⚠️')} Trade responsibly - Signals are not a profit guarantee
 
 📌 To subscribe to premium instant signals, use the "Subscription Plans" button
 """
@@ -1124,20 +1124,20 @@ async def show_time_list(query):
 
     if scheduled_time and scheduled_time.get("start_time"):
         status = "✅ Active" if scheduled_time.get("enabled") else "⏸️ Paused"
-        schedule_text = f"""{emj('check', '✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒕𝒂𝒕𝒖𝒔: {status}
+        schedule_text = f"""{e('✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒕𝒂𝒕𝒖𝒔: {status}
 
-{emj('clock', '⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {scheduled_time['start_time']}
-{emj('clock', '⏰')} 𝑬𝒏𝒅 𝑻𝒊𝒎𝒆: {scheduled_time.get('end_time', 'Not set')}
+{e('⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {scheduled_time['start_time']}
+{e('⏰')} 𝑬𝒏𝒅 𝑻𝒊𝒎𝒆: {scheduled_time.get('end_time', 'Not set')}
 
 💡 The bot will automatically send you signals during this time period."""
     else:
-        schedule_text = f"""{emj('warning', '⚠️')} 𝑵𝒐 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒆𝒕
+        schedule_text = f"""{e('⚠️')} 𝑵𝒐 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒆𝒕
 
 You haven't set a signal schedule yet.
 
 👇 Choose a time slot below to start receiving signals automatically:"""
 
-    text = f"""{emj('clock', '⏰')} 𝑺𝑰𝑮𝑵𝑨𝑳 𝑺𝑪𝑯𝑬𝑫𝑼𝑳𝑬
+    text = f"""{e('⏰')} 𝑺𝑰𝑮𝑵𝑨𝑳 𝑺𝑪𝑯𝑬𝑫𝑼𝑳𝑬
 
 {schedule_text}
 
@@ -1235,7 +1235,7 @@ def _clear_user_selections(user_id: int, broker: str):
 
 async def show_signal_session_broker(query):
     """Show broker selection page."""
-    text = f"""{emj('clock', '⏰')} 𝚂𝙸𝙶𝙽𝙰𝙻 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
+    text = f"""{e('⏰')} 𝚂𝙸𝙶𝙽𝙰𝙻 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
 
 👇 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
 
@@ -1263,7 +1263,7 @@ async def show_signal_session_pairs(query, broker: str, page: int):
     page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
 
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
-    text = f"""{emj('clock', '⏰')} 𝚂𝙸𝙶𝙽𝙰𝙻 𝚂𝙴𝚂𝚂𝙸𝙾𝙽 - {broker_name}
+    text = f"""{e('⏰')} 𝚂𝙸𝙶𝙽𝙰𝙻 𝚂𝙴𝚂𝚂𝙸𝙾𝙽 - {broker_name}
 
 👇 𝚂𝙴𝙻𝙴𝙲𝚃 𝙲𝚄𝚁𝚁𝙴𝙽𝙲𝚈 𝙿𝙰𝙸𝚁𝚂
 
@@ -1404,7 +1404,7 @@ async def show_signal_session_mtg(query, user_id):
         await query.answer("Please select at least one pair first!", show_alert=True)
         return
 
-    text = f"""{emj('lightning', '⚡')} 𝚂𝚃𝙰𝚁𝚃 𝙰𝙽𝙰𝙻𝚈𝚂𝙸𝚂
+    text = f"""{e('⚡')} 𝚂𝚃𝙰𝚁𝚃 𝙰𝙽𝙰𝙻𝚈𝚂𝙸𝚂
 
 Selected pairs: {selected_count}
 
@@ -1423,7 +1423,7 @@ async def show_signal_session_duration(query, user_id, mtg_level):
     """Show trade duration selection page (1M, 2M, 3M, 4M, 5M)."""
     # Detect broker
     # We need to store mtg_level in user_data or pass it
-    text = f"""{emj('clock', '⏰')} 𝚃𝚁𝙰𝙳𝙴 𝙳𝚄𝚁𝙰𝚃𝙸𝙾𝙽
+    text = f"""{e('⏰')} 𝚃𝚁𝙰𝙳𝙴 𝙳𝚄𝚁𝙰𝚃𝙸𝙾𝙽
 
 MTG Level: MTG{mtg_level}
 
@@ -1516,10 +1516,10 @@ async def show_time_session(query):
         for i, s in enumerate(sessions, 1):
             status = "✅" if s["enabled"] else "⏸️"
             sessions_text += f"\n{i}. {status} {s['start_time']} - {s['end_time']}"
-        schedule_text = f"""{emj('check', '✅')} 𝒀𝒐𝒖𝒓 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆𝒅 𝑺𝒆𝒔𝒔𝒊𝒐𝒏𝒔:
+        schedule_text = f"""{e('✅')} 𝒀𝒐𝒖𝒓 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆𝒅 𝑺𝒆𝒔𝒔𝒊𝒐𝒏𝒔:
 {sessions_text}"""
     else:
-        schedule_text = f"""{emj('warning', '⚠️')} 𝙽𝙾 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴𝙳 𝚂𝙴𝚂𝚂𝙸𝙾𝙽𝚂 𝚈𝙴𝚃
+        schedule_text = f"""{e('⚠️')} 𝙽𝙾 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴𝙳 𝚂𝙴𝚂𝚂𝙸𝙾𝙽𝚂 𝚈𝙴𝚃
 
 𝚈𝚘𝚞 𝚍𝚘𝚗'𝚝 𝚑𝚊𝚟𝚎 𝚊𝚗𝚢 𝚜𝚌𝚑𝚎𝚍𝚞𝚕𝚎𝚍 𝚜𝚎𝚜𝚜𝚒𝚘𝚗𝚜 𝚊𝚝 𝚝𝚑𝚎 𝚖𝚘𝚖𝚎𝚗𝚝.
 
@@ -1527,7 +1527,7 @@ async def show_time_session(query):
 
 👇 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝚁𝙴𝙰𝚃𝙴 𝙰 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴."""
 
-    text = f"""{emj('clock', '⏰')} 𝚃𝙸𝙼𝙴 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
+    text = f"""{e('⏰')} 𝚃𝙸𝙼𝙴 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
 
 {schedule_text}
 
@@ -1552,13 +1552,13 @@ async def start_new_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
     except Exception:
         pass
-    text = f"""{emj('clock', '⏰')} 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
+    text = f"""{e('⏰')} 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
 
 👇 𝙿𝙻𝙴𝙰𝚂𝙴 𝚂𝙴𝙽𝙳 𝚃𝙷𝙴 𝚂𝚃𝙰𝚁𝚃 𝚃𝙸𝙼𝙴
 
 𝙵𝚘𝚛𝚖𝚊𝚝: 𝙷𝙷:𝙼𝙼 (𝚎.𝚐. 09:00)
 
-{emj('warning', '⚠️')} 𝚂𝚎𝚗𝚍 /cancel 𝚝𝚘 𝚌𝚊𝚗𝚌𝚎𝚕"""
+{e('⚠️')} 𝚂𝚎𝚗𝚍 /cancel 𝚝𝚘 𝚌𝚊𝚗𝚌𝚎𝚕"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Cancel", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
@@ -1578,15 +1578,15 @@ async def receive_session_start(update: Update, context: ContextTypes.DEFAULT_TY
         if not (0 <= h <= 23 and 0 <= m <= 59):
             raise ValueError
     except (ValueError, IndexError):
-        await update.message.reply_text(f"{emj('warning', '⚠️')} Invalid format! Please send time as HH:MM (e.g. 09:00)\n\nSend /cancel to cancel")
+        await update.message.reply_text(f"{e('⚠️')} Invalid format! Please send time as HH:MM (e.g. 09:00)\n\nSend /cancel to cancel")
         return WAITING_SESSION_START
 
     context.user_data["session_start"] = text
     await update.message.reply_text(
-        f"{emj('check', '✅')} Start time received: {text}\n\n"
-        f"{emj('clock', '⏰')} Now please send the END time\n\n"
+        f"{e('✅')} Start time received: {text}\n\n"
+        f"{e('⏰')} Now please send the END time\n\n"
         f"Format: HH:MM (e.g. 17:00)\n\n"
-        f"{emj('warning', '⚠️')} Send /cancel to cancel",
+        f"{e('⚠️')} Send /cancel to cancel",
         parse_mode=ParseMode.HTML
     )
     return WAITING_SESSION_END
@@ -1603,17 +1603,17 @@ async def receive_session_end(update: Update, context: ContextTypes.DEFAULT_TYPE
         if not (0 <= h <= 23 and 0 <= m <= 59):
             raise ValueError
     except (ValueError, IndexError):
-        await update.message.reply_text(f"{emj('warning', '⚠️')} Invalid format! Please send time as HH:MM (e.g. 17:00)\n\nSend /cancel to cancel")
+        await update.message.reply_text(f"{e('⚠️')} Invalid format! Please send time as HH:MM (e.g. 17:00)\n\nSend /cancel to cancel")
         return WAITING_SESSION_END
 
     context.user_data["session_end"] = text
     start_time = context.user_data.get("session_start")
     end_time = text
 
-    text_msg = f"""{emj('check', '✅')} 𝙲𝙾𝙽𝙵𝙸𝚁𝙼 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
+    text_msg = f"""{e('✅')} 𝙲𝙾𝙽𝙵𝙸𝚁𝙼 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
 
-{emj('clock', '⏰')} 𝚂𝚃𝙰𝚁𝚃: {start_time}
-{emj('clock', '⏰')} 𝙴𝙽𝙳:   {end_time}
+{e('⏰')} 𝚂𝚃𝙰𝚁𝚃: {start_time}
+{e('⏰')} 𝙴𝙽𝙳:   {end_time}
 
 👇 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼"""
     keyboard = InlineKeyboardMarkup([
@@ -1631,7 +1631,7 @@ async def save_session(query, context):
     end_time = context.user_data.get("session_end")
 
     if not start_time or not end_time:
-        await safe_edit_message(query, f"{emj('warning', '⚠️')} Session data missing. Please try again.", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_message(query, f"{e('⚠️')} Session data missing. Please try again.", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return
 
     try:
@@ -1648,10 +1648,10 @@ async def save_session(query, context):
     context.user_data.pop("session_start", None)
     context.user_data.pop("session_end", None)
 
-    text = f"""{emj('check', '✅')} 𝚂𝙲𝚑𝚎𝚍𝚞𝚕𝚎 𝚂𝚊𝚟𝚎𝚍!
+    text = f"""{e('✅')} 𝚂𝙲𝚑𝚎𝚍𝚞𝚕𝚎 𝚂𝚊𝚟𝚎𝚍!
 
-{emj('clock', '⏰')} Start: {start_time}
-{emj('clock', '⏰')} End: {end_time}
+{e('⏰')} Start: {start_time}
+{e('⏰')} End: {end_time}
 
 💡 The bot will send you trading signals
 during this time period every day."""
@@ -1660,7 +1660,7 @@ during this time period every day."""
 
 async def show_live_future(query):
     """Show the Live Future page - user requests to verify results."""
-    text = f"""{emj('crystal_ball', '🔮')} 𝙻𝙸𝚅𝙴 𝙵𝚄𝚃𝚄𝚁𝙴
+    text = f"""{e('🔮')} 𝙻𝙸𝚅𝙴 𝙵𝚄𝚃𝚄𝚁𝙴
 
 𝚁𝚎𝚚𝚞𝚎𝚜𝚝 𝚝𝚘 𝚟𝚎𝚛𝚒𝚏𝚢 𝚏𝚞𝚝𝚞𝚛𝚎 𝚜𝚒𝚐𝚗𝚊𝚕𝚜 𝚛𝚎𝚜𝚞𝚕𝚝𝚜.
 
@@ -2834,14 +2834,18 @@ your premium future signals."""
 
 🦌 {to_bold_italic('ENGINEERED TO DOMINATE')} 🕊"""
 
-        await bot.send_message(chat_id=chat_id, text=result_text, parse_mode=ParseMode.HTML)
+        # Each signal message gets its own Back button
+        result_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+        ])
+        await bot.send_message(chat_id=chat_id, text=result_text, reply_markup=result_keyboard, parse_mode=ParseMode.HTML)
         await asyncio.sleep(0.5)  # Small delay between messages
 
-    # Send final message with back button
-    final_text = f"""🐾 {to_bold_italic('AXTIRON FS - COMPLETE')} 🐾
+    # Send final message
+    final_text = f"""{e('✅')} {to_bold_italic('AXTIRON FS - COMPLETE')}
 
-{e('✅')} {to_bold('All signals have been generated.')}
-{e('💎')} {to_bold('Good luck with your trades!')} 🦌"""
+{e('💎')} {to_bold('All signals have been generated.')}
+{e('🦌')} {to_bold('Good luck with your trades!')}"""
     final_keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
@@ -2863,7 +2867,7 @@ async def show_free_bots(query):
         "Trade Journal Bot",
     ]
 
-    text = f"""{emj('gift', '🎁')} <b>FREE BOTS</b>"""
+    text = f"""{e('🎁')} <b>FREE BOTS</b>"""
     keyboard_rows = []
     # 2 columns x 5 rows: first 5 in left column, next 5 in right column
     for i in range(5):
@@ -2902,9 +2906,9 @@ async def show_free_bot_details(query, user_id, bot_idx):
     bot_name, bot_desc = bots[bot_idx]
 
     # ALL bots are locked - show upgrade message
-    text = f"""{emj('lock', '🔒')} <b>{bot_name}</b>
+    text = f"""{e('🔒')} <b>{bot_name}</b>
 
-{emj('warning', '⚠️')} <b>UPGRADE REQUIRED</b>
+{e('⚠️')} <b>UPGRADE REQUIRED</b>
 
 This bot is locked. You need to upgrade your plan
 to access this bot.
@@ -2922,7 +2926,7 @@ to unlock all bots.
 async def show_control_bot(query, user_id):
     if not is_admin(user_id):
         text = f"""
-{emj('cross', '❌')} Access Denied
+{e('❌')} Access Denied
 
 This feature is restricted to admins only.
 If you believe this is an error, please contact support.
@@ -2930,13 +2934,13 @@ If you believe this is an error, please contact support.
         await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return
     text = f"""
-{emj('tools', '🛠')} Admin Control Panel
+{e('🛠')} Admin Control Panel
 
-Welcome Admin {emj('crown', '👑')}
+Welcome Admin {e('👑')}
 
 Quick Statistics:
 👥 Users: {get_all_users_count()}
-{emj('stats', '📊')} Today's Signals: {len(get_signals_stats())}
+{e('📊')} Today's Signals: {len(get_signals_stats())}
 
 Select the desired action:
 """
@@ -2986,14 +2990,14 @@ async def show_top_payout(query):
         lines.append(f"{bold_name}  {bold_payout}")
     pairs_text = "\n".join(lines)
 
-    text = f"""{emj('money', '💲')} <b>TOP PAYOUT</b>
+    text = f"""{e('💲')} <b>TOP PAYOUT</b>
 
 Pairs with 88%+ payout:
 
 {pairs_text}
 
-{emj('stats', '📊')} <b>Updated:</b> {datetime.now().strftime('%H:%M')}
-{emj('warning', '⚠️')} <b>Rates change continuously</b>"""
+{e('📊')} <b>Updated:</b> {datetime.now().strftime('%H:%M')}
+{e('⚠️')} <b>Rates change continuously</b>"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
@@ -3001,7 +3005,7 @@ Pairs with 88%+ payout:
 
 async def show_future_signals(query):
     text = f"""
-{emj('crystal', '💎')} Choose Platform
+{e('💎')} Choose Platform
 
 Select the platform you want future signals for:
 """
@@ -3013,14 +3017,14 @@ async def show_future_signals_platform(query, platform):
         future_signals = [("EUR/USD OTC", now + timedelta(minutes=15), "CALL", "M1"), ("GBP/JPY OTC", now + timedelta(minutes=30), "PUT", "M5"), ("USD/JPY OTC", now + timedelta(hours=1), "CALL", "M1")]
     else:
         future_signals = [("BTC/USD", now + timedelta(minutes=15), "PUT", "M5"), ("ETH/USD", now + timedelta(minutes=30), "CALL", "M1"), ("Gold/XAU", now + timedelta(hours=1), "CALL", "M5")]
-    signals_text = "\n\n".join([f"📊 {s[0]}\n{emj('clock', '⏰')} {s[1].strftime('%H:%M')}\nDirection: {s[2]}\nDuration: {s[3]}" for s in future_signals])
+    signals_text = "\n\n".join([f"📊 {s[0]}\n{e('⏰')} {s[1].strftime('%H:%M')}\nDirection: {s[2]}\nDuration: {s[3]}" for s in future_signals])
     platform_name = "QUOTEX" if platform == "quotex" else "BINOLLA"
     text = f"""
-{emj('crystal', '💎')} {platform_name} - Upcoming Future Signals
+{e('💎')} {platform_name} - Upcoming Future Signals
 
 {signals_text}
 
-{emj('warning', '⚠️')} Future signals are a premium feature (Monthly Plan or higher)
+{e('⚠️')} Future signals are a premium feature (Monthly Plan or higher)
 """
     await safe_edit_message(query, text, reply_markup=get_platform_keyboard("future_signals"), parse_mode=ParseMode.HTML)
 
@@ -3043,14 +3047,14 @@ async def show_future_results_platform(query, platform):
     win_rate = (wins / total * 100) if total > 0 else 0
     platform_name = "QUOTEX" if platform == "quotex" else "BINOLLA"
     text = f"""
-{emj('stats', '📊')} {platform_name} - Future Signals Results
+{e('📊')} {platform_name} - Future Signals Results
 
 {results_text}
 
 📈 Performance Statistics:
-{emj('check', '✅')} Winning signals: {wins}
-{emj('cross', '❌')} Losing signals: {total - wins}
-{emj('stats', '📊')} Win rate: {win_rate:.0f}%
+{e('✅')} Winning signals: {wins}
+{e('❌')} Losing signals: {total - wins}
+{e('📊')} Win rate: {win_rate:.0f}%
 
 🎯 To follow real-time results:
 """
@@ -3075,12 +3079,12 @@ async def show_referral_link(query, user_id):
     ref_count = get_referral_count(user_id)
     referrals = get_referrals_list(user_id)
     text = f"""
-{emj('gift', '🎁')} Referral System
+{e('🎁')} Referral System
 
 Your referral link:
 {ref_link}
 
-{emj('stats', '📊')} Your Statistics:
+{e('📊')} Your Statistics:
 👥 Referrals count: {ref_count}
 💎 Earned rewards: {ref_count * 5} points
 
@@ -3094,7 +3098,7 @@ Your referral link:
     if referrals:
         for ref in referrals[:5]:
             name = ref.get("first_name") or ref.get("username") or "User"
-            joined = f"{emj('check', '✅')} Joined" if ref.get("joined_channel") else "⏳ Pending"
+            joined = f"{e('✅')} Joined" if ref.get("joined_channel") else "⏳ Pending"
             text += f"\n• {name} - {joined}"
     else:
         text += f"\nNo referrals yet. Share your link to get started!"
@@ -3108,7 +3112,7 @@ Your referral link:
 async def show_my_account(query, user_id):
     user_data = get_user(user_id)
     if not user_data:
-        await safe_edit_message(query, f"{emj('warning', '⚠️')} Your account was not found. Start over with /start", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_message(query, f"{e('⚠️')} Your account was not found. Start over with /start", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return
 
     join_date = user_data.get("join_date", "Unknown")[:10] if user_data.get("join_date") else "Unknown"
@@ -3130,14 +3134,14 @@ async def show_my_account(query, user_id):
         else:
             name_fancy += c
 
-    text = f"""{emj('user', '🪪')} <b>MY PROFILE</b>
+    text = f"""{e('🪪')} <b>MY PROFILE</b>
 
 🆔 <b>ID:</b> <code>{user_id}</code>  👤 <b>Name:</b> <b>{name_fancy}</b>
 📅 <b>Joined:</b> <b>{join_date}</b>
 
-{emj('diamond', '💎')} <b>PLAN:</b> 👑 <b>{plan_name}</b>  {status_emoji} <b>Status:</b> <b>{status}</b>
+{e('💎')} <b>PLAN:</b> 👑 <b>{plan_name}</b>  {status_emoji} <b>Status:</b> <b>{status}</b>
 
-{emj('stats', '📊')} <b>STATS:</b>  👥 <b>Referrals:</b> {ref_count}  💰 <b>Rewards:</b> {ref_count * 5} pts
+{e('📊')} <b>STATS:</b>  👥 <b>Referrals:</b> {ref_count}  💰 <b>Rewards:</b> {ref_count * 5} pts
 
 🏆 <b>ACHIEVEMENTS:</b>
 ✅ <b>Bot Member</b>
@@ -3146,7 +3150,7 @@ async def show_my_account(query, user_id):
 
 async def show_support(query):
     text = f"""
-{emj('headset', '📞')} Technical Support
+{e('📞')} Technical Support
 
 We are here to help you anytime!
 
@@ -3166,7 +3170,7 @@ A: Click "Subscription Plans" then choose a plan
 Q: How do I earn from referrals?
 A: Share your referral link, every 10 referrals = 1 free VIP month
 
-{emj('warning', '⚠️')} For urgent incidents only:
+{e('⚠️')} For urgent incidents only:
 Contact support via the button below
 """
     keyboard = InlineKeyboardMarkup([
@@ -3202,13 +3206,13 @@ async def show_ratings(query):
     full_stars = int(avg_rating)
     stars_display = "⭐" * full_stars + "✨" if (avg_rating - full_stars) >= 0.5 else "⭐" * full_stars
 
-    text = f"""{emj('star', '⭐')} 𝑹𝑨𝑻𝑬 𝑶𝑼𝑹 𝑩𝑶𝑻 {emj('star', '⭐')}
+    text = f"""{e('⭐')} 𝑹𝑨𝑻𝑬 𝑶𝑼𝑹 𝑩𝑶𝑻 {e('⭐')}
 
 𝑾𝒆 𝒗𝒂𝒍𝒖𝒆 𝒚𝒐𝒖𝒓 𝒇𝒆𝒆𝒅𝒃𝒂𝒄𝒌! {e('😍')}
 
 {separator}
 
-{emj('stats', '📊')} 𝑪𝑼𝑹𝑹𝑬𝑵𝑻 𝑹𝑨𝑻𝑰𝑵𝑮:
+{e('📊')} 𝑪𝑼𝑹𝑹𝑬𝑵𝑻 𝑹𝑨𝑻𝑰𝑵𝑮:
 {stars_display} {avg_rating}/5
 𝑻𝒐𝒕𝒂𝒍 𝑹𝒂𝒕𝒊𝒏𝒈𝒔: {total_ratings}
 
@@ -3224,7 +3228,7 @@ async def show_ratings(query):
 
 {separator}
 
-{emj('heart', '❤️')} 𝑻𝑯𝑨𝑵𝑲 𝒀𝑶𝑼 𝑭𝑶𝑹 𝑯𝑬𝑳𝑷𝑰𝑵𝑮 𝑼𝑺 𝑰𝑴𝑷𝑹𝑶𝑽𝑬! {e('🙏')}"""
+{e('❤️')} 𝑻𝑯𝑨𝑵𝑲 𝒀𝑶𝑼 𝑭𝑶𝑹 𝑯𝑬𝑳𝑷𝑰𝑵𝑮 𝑼𝑺 𝑰𝑴𝑷𝑹𝑶𝑽𝑬! {e('🙏')}"""
     await safe_edit_message(query, text, reply_markup=get_ratings_keyboard(), parse_mode=ParseMode.HTML)
 
 async def submit_rating(query, stars):
@@ -3259,13 +3263,13 @@ async def submit_rating(query, stars):
     msg = thanks_messages.get(stars_int, "Thank you for your rating!")
 
     text = f"""
-{emj('check', '✅')} Rating Submitted!
+{e('✅')} Rating Submitted!
 
 You rated us: {star_display} ({stars_int}/5)
 
 {msg}
 
-{emj('heart', '❤️')} Thank you for taking the time to rate QuantVexa Bot!
+{e('❤️')} Thank you for taking the time to rate QuantVexa Bot!
 """
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
@@ -3297,7 +3301,7 @@ async def show_upgrade(query):
 
 {separator}
 
-{emj('calendar', '📅')} 𝑼𝑷𝑮𝑹𝑨𝑫𝑬 $50
+{e('📅')} 𝑼𝑷𝑮𝑹𝑨𝑫𝑬 $50
 𝑫𝒖𝒓𝒂𝒕𝒊𝒐𝒏: 30 𝒅𝒂𝒚𝒔
 • 𝑼𝒏𝒍𝒊𝒎𝒊𝒕𝒆𝒅 𝒔𝒊𝒈𝒏𝒂𝒍𝒔
 • 𝑭𝒖𝒍𝒍 𝒂𝒄𝒄𝒆𝒔𝒔 𝒕𝒐 𝒕𝒊𝒎𝒆 𝒍𝒊𝒔𝒕
@@ -3306,7 +3310,7 @@ async def show_upgrade(query):
 
 {separator}
 
-{emj('diamond', '💎')} 𝑼𝑷𝑮𝑹𝑨𝑫𝑬 $75
+{e('💎')} 𝑼𝑷𝑮𝑹𝑨𝑫𝑬 $75
 𝑫𝒖𝒓𝒂𝒕𝒊𝒐𝒏: 60 𝒅𝒂𝒚𝒔
 • 𝑨𝒍𝒍 $50 𝒇𝒆𝒂𝒕𝒖𝒓𝒆𝒔
 • 𝑻𝒐𝒑 𝒑𝒂𝒚𝒐𝒖𝒕 𝒄𝒖𝒓𝒓𝒆𝒏𝒄𝒊𝒆𝒔 𝒂𝒏𝒂𝒍𝒚𝒔𝒊𝒔
@@ -3315,7 +3319,7 @@ async def show_upgrade(query):
 
 {separator}
 
-{emj('crown', '👑')} 𝑼𝑷𝑮𝑹𝑨𝑫𝑬 $100
+{e('👑')} 𝑼𝑷𝑮𝑹𝑨𝑫𝑬 $100
 𝑫𝒖𝒓𝒂𝒕𝒊𝒐𝒏: 90 𝒅𝒂𝒚𝒔
 • 𝑨𝒍𝒍 $75 𝒇𝒆𝒂𝒕𝒖𝒓𝒆𝒔
 • 𝑷𝒆𝒓𝒔𝒐𝒏𝒂𝒍 𝒂𝒄𝒄𝒐𝒖𝒏𝒕 𝒎𝒂𝒏𝒂𝒈𝒆𝒓
@@ -3324,9 +3328,9 @@ async def show_upgrade(query):
 
 {separator}
 
-{emj('lightning', '⚡')} 𝑺𝑬𝑳𝑬𝑪𝑻 𝑨 𝑷𝑳𝑨𝑵 𝑩𝑬𝑳𝑶𝑾 𝑻𝑶 𝑼𝑷𝑮𝑹𝑨𝑫𝑬:
+{e('⚡')} 𝑺𝑬𝑳𝑬𝑪𝑻 𝑨 𝑷𝑳𝑨𝑵 𝑩𝑬𝑳𝑶𝑾 𝑻𝑶 𝑼𝑷𝑮𝑹𝑨𝑫𝑬:
 
-{emj('warning', '⚠️')} 𝑻𝒐 𝒔𝒖𝒃𝒔𝒄𝒓𝒊𝒃𝒆, 𝒄𝒐𝒏𝒕𝒂𝒄𝒕 𝒕𝒆𝒄𝒉𝒏𝒊𝒄𝒂𝒍 𝒔𝒖𝒑𝒑𝒐𝒓𝒕"""
+{e('⚠️')} 𝑻𝒐 𝒔𝒖𝒃𝒔𝒄𝒓𝒊𝒃𝒆, 𝒄𝒐𝒏𝒕𝒂𝒄𝒕 𝒕𝒆𝒄𝒉𝒏𝒊𝒄𝒂𝒍 𝒔𝒖𝒑𝒑𝒐𝒓𝒕"""
     await safe_edit_message(query, text, reply_markup=get_upgrade_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_upgrade_details(query, price):
@@ -3337,23 +3341,23 @@ async def show_upgrade_details(query, price):
         "100": {"name": "Gold Upgrade", "price": "$100", "duration": "90 days", "features": ["All Premium features", "Personal account manager", "Custom VIP signals", "Exclusive training workshops"]},
     }
     plan = plans.get(price, plans["50"])
-    features_text = "\n".join([f"{emj('check', '✅')} {f}" for f in plan["features"]])
+    features_text = "\n".join([f"{e('✅')} {f}" for f in plan["features"]])
 
     text = f"""
-{emj('crown', '👑')} {plan['name']} - {plan['price']}
+{e('👑')} {plan['name']} - {plan['price']}
 
 📋 Plan Details:
 
 💰 Price: {plan['price']}
 ⏰ Duration: {plan['duration']}
 
-{emj('star', '⭐')} Included Features:
+{e('⭐')} Included Features:
 {features_text}
 
 💳 To subscribe to this plan:
 Contact technical support via the Support button in the main menu
 
-{emj('lightning', '⚡')} Upgrade now and unlock premium features!
+{e('⚡')} Upgrade now and unlock premium features!
 """
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Upgrades", callback_data="upgrade", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["crown"])],
@@ -3366,7 +3370,7 @@ Contact technical support via the Support button in the main menu
 # ============================================================
 async def show_schedule_session(query):
     text = f"""
-{emj('calendar', '📅')} 𝑺𝑪𝑯𝑬𝑫𝑼𝑳𝑬 𝑺𝑬𝑺𝑺𝑰𝑶𝑵
+{e('📅')} 𝑺𝑪𝑯𝑬𝑫𝑼𝑳𝑬 𝑺𝑬𝑺𝑺𝑰𝑶𝑵
 
 𝑺𝒆𝒕 𝒖𝒑 𝒚𝒐𝒖𝒓 𝒕𝒓𝒂𝒅𝒊𝒏𝒈 𝒔𝒄𝒉𝒆𝒅𝒖𝒍𝒆:
 
@@ -3374,7 +3378,7 @@ async def show_schedule_session(query):
 𝑨𝒇𝒕𝒆𝒓𝒏𝒐𝒐𝒏 𝑺𝒆𝒔𝒔𝒊𝒐𝒏: 14:00 - 17:00
 𝑬𝒗𝒆𝒏𝒊𝒏𝒈 𝑺𝒆𝒔𝒔𝒊𝒐𝒏: 19:00 - 22:00
 
-{emj('warning', '⚠️')} 𝑪𝒉𝒐𝒐𝒔𝒆 𝒂 𝒔𝒆𝒔𝒔𝒊𝒐𝒏 𝒕𝒉𝒂𝒕 𝒔𝒖𝒊𝒕𝒔 𝒚𝒐𝒖𝒓 𝒕𝒊𝒎𝒆 𝒛𝒐𝒏𝒆
+{e('⚠️')} 𝑪𝒉𝒐𝒐𝒔𝒆 𝒂 𝒔𝒆𝒔𝒔𝒊𝒐𝒏 𝒕𝒉𝒂𝒕 𝒔𝒖𝒊𝒕𝒔 𝒚𝒐𝒖𝒓 𝒕𝒊𝒎𝒆 𝒛𝒐𝒏𝒆
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
@@ -3388,7 +3392,7 @@ async def show_settings(query):
     risk = settings.get("risk", "Medium")
     notifications = settings.get("notifications", "ON")
 
-    text = f"""{emj('gear', '⚙️')} <b>SETTINGS</b>
+    text = f"""{e('⚙️')} <b>SETTINGS</b>
 
 <b>Trading Settings:</b>
 📊 <b>Platform:</b> {platform}
@@ -3450,7 +3454,7 @@ def _save_user_setting(user_id: int, key: str, value: str):
 
 async def settings_change_platform(query, user_id):
     """Show platform selection."""
-    text = f"""{emj('gear', '⚙️')} <b>SELECT PLATFORM</b>
+    text = f"""{e('⚙️')} <b>SELECT PLATFORM</b>
 
 👇 Choose your default platform:"""
     keyboard = InlineKeyboardMarkup([
@@ -3465,7 +3469,7 @@ async def settings_change_platform(query, user_id):
 
 async def settings_change_expiry(query, user_id):
     """Show expiry selection."""
-    text = f"""{emj('gear', '⚙️')} <b>SELECT EXPIRY</b>
+    text = f"""{e('⚙️')} <b>SELECT EXPIRY</b>
 
 👇 Choose default expiry time:"""
     keyboard = InlineKeyboardMarkup([
@@ -3484,7 +3488,7 @@ async def settings_change_expiry(query, user_id):
 
 async def settings_change_risk(query, user_id):
     """Show risk level selection."""
-    text = f"""{emj('gear', '⚙️')} <b>SELECT RISK LEVEL</b>
+    text = f"""{e('⚙️')} <b>SELECT RISK LEVEL</b>
 
 👇 Choose your risk level:"""
     keyboard = InlineKeyboardMarkup([
@@ -3500,7 +3504,7 @@ async def settings_change_risk(query, user_id):
 
 async def settings_change_notifications(query, user_id):
     """Show notifications selection."""
-    text = f"""{emj('gear', '⚙️')} <b>NOTIFICATIONS</b>
+    text = f"""{e('⚙️')} <b>NOTIFICATIONS</b>
 
 👇 Choose notification setting:"""
     keyboard = InlineKeyboardMarkup([
@@ -3514,7 +3518,7 @@ async def settings_change_notifications(query, user_id):
 
 async def show_checker(query, checker_name):
     text = f"""
-{emj('magnifier', '🔍')} {checker_name.upper()}
+{e('🔍')} {checker_name.upper()}
 
 𝑪𝒉𝒆𝒄𝒌𝒊𝒏𝒈 𝒎𝒂𝒓𝒌𝒆𝒕 𝒔𝒕𝒂𝒕𝒖𝒔...
 
@@ -3527,13 +3531,13 @@ async def show_checker(query, checker_name):
 • 𝑼𝑺𝑫/𝑱𝑷𝒀
 • 𝑨𝑼𝑫/𝑪𝑨𝑫
 
-{emj('warning', '⚠️')} 𝑹𝒆𝒇𝒓𝒆𝒔𝒉 𝒕𝒐 𝒄𝒉𝒆𝒄𝒌 𝒂𝒈𝒂𝒊𝒏
+{e('⚠️')} 𝑹𝒆𝒇𝒓𝒆𝒔𝒉 𝒕𝒐 𝒄𝒉𝒆𝒄𝒌 𝒂𝒈𝒂𝒊𝒏
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_market_fs(query, market_name):
     text = f"""
-{emj('chart', '📈')} {market_name.upper()} 𝑭𝑺
+{e('📈')} {market_name.upper()} 𝑭𝑺
 
 𝑴𝒂𝒓𝒌𝒆𝒕 𝑭𝒖𝒕𝒖𝒓𝒆 𝑺𝒊𝒈𝒏𝒂𝒍𝒔:
 
@@ -3544,13 +3548,13 @@ async def show_market_fs(query, market_name):
 
 𝑼𝒑𝒅𝒂𝒕𝒆𝒅: {datetime.now().strftime('%H:%M')}
 
-{emj('warning', '⚠️')} 𝑭𝒖𝒕𝒖𝒓𝒆 𝒔𝒊𝒈𝒏𝒂𝒍𝒔 𝒂𝒓𝒆 𝒑𝒓𝒆𝒎𝒊𝒖𝒎 𝒇𝒆𝒂𝒕𝒖𝒓𝒆
+{e('⚠️')} 𝑭𝒖𝒕𝒖𝒓𝒆 𝒔𝒊𝒈𝒏𝒂𝒍𝒔 𝒂𝒓𝒆 𝒑𝒓𝒆𝒎𝒊𝒖𝒎 𝒇𝒆𝒂𝒕𝒖𝒓𝒆
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_future_live(query):
     text = f"""
-{emj('crystal_ball', '🔮')} 𝑭𝑼𝑻𝑼𝑹𝑬 𝑳𝑰𝑽𝑬
+{e('🔮')} 𝑭𝑼𝑻𝑼𝑹𝑬 𝑳𝑰𝑽𝑬
 
 𝑼𝒑𝒄𝒐𝒎𝒊𝒏𝒈 𝑳𝒊𝒗𝒆 𝑺𝒊𝒈𝒏𝒂𝒍𝒔:
 
@@ -3560,13 +3564,13 @@ async def show_future_live(query):
 • 𝑫𝒊𝒓𝒆𝒄𝒕𝒊𝒐𝒏: 𝑪𝑨𝑳𝑳
 • 𝑬𝒙𝒑𝒊𝒓𝒚: 𝑴1
 
-{emj('lightning', '⚡')} 𝑺𝒕𝒂𝒚 𝒕𝒖𝒏𝒆𝒅!
+{e('⚡')} 𝑺𝒕𝒂𝒚 𝒕𝒖𝒏𝒆𝒅!
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_live_signal(query):
     """Show broker selection for live signal."""
-    text = f"""{emj('lightning_premium', '⚡')} <b>LIVE SIGNAL</b>
+    text = f"""{e('⚡')} <b>LIVE SIGNAL</b>
 
 👇 <b>CHOOSE BROKER</b>"""
     keyboard = InlineKeyboardMarkup([
@@ -3582,7 +3586,7 @@ async def show_live_signal(query):
 async def show_live_signal_market(query, broker):
     """Show market type selection (OTC / Global)."""
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
-    text = f"""{emj('lightning_premium', '⚡')} <b>LIVE SIGNAL - {broker_name}</b>
+    text = f"""{e('⚡')} <b>LIVE SIGNAL - {broker_name}</b>
 
 👇 <b>CHOOSE MARKET TYPE</b>"""
     keyboard = InlineKeyboardMarkup([
@@ -3599,7 +3603,7 @@ async def show_live_signal_duration(query, broker, market):
     """Show trade duration selection."""
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
     market_name = "OTC" if market == "otc" else "Global"
-    text = f"""{emj('lightning_premium', '⚡')} <b>LIVE SIGNAL - {broker_name} {market_name}</b>
+    text = f"""{e('⚡')} <b>LIVE SIGNAL - {broker_name} {market_name}</b>
 
 👇 <b>CHOOSE DURATION</b>"""
     keyboard = InlineKeyboardMarkup([
@@ -3621,7 +3625,7 @@ async def show_live_signal_bot_type(query, broker, market, duration):
     """Show bot type selection (Strong / Medium / Hybrid)."""
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
     market_name = "OTC" if market == "otc" else "Global"
-    text = f"""{emj('lightning_premium', '⚡')} <b>LIVE SIGNAL - {broker_name} {market_name}</b>
+    text = f"""{e('⚡')} <b>LIVE SIGNAL - {broker_name} {market_name}</b>
 
 Duration: {duration}
 
@@ -3661,20 +3665,20 @@ async def show_live_signal_final(query, broker, market, duration, bot_type):
 async def show_bug_signal(query):
     """Bug Signal is currently disabled."""
     text = f"""
-{emj('bug', '🐛')} 𝑩𝑼𝑮 𝑺𝑰𝑮𝑵𝑨𝑳
+{e('🐛')} 𝑩𝑼𝑮 𝑺𝑰𝑮𝑵𝑨𝑳
 
-{emj('warning', '⚠️')} 𝑪𝑶𝑴𝑰𝑵𝑮 𝑺𝑶𝑶𝑵
+{e('⚠️')} 𝑪𝑶𝑴𝑰𝑵𝑮 𝑺𝑶𝑶𝑵
 
 This feature is currently under development
 and will be available soon.
 
-{emj('lightning', '⚡')} Stay tuned for updates!
+{e('⚡')} Stay tuned for updates!
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_live_payouts(query):
     """Show broker selection for live payouts."""
-    text = f"""{emj('diamond_premium', '💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂
+    text = f"""{e('💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂
 
 👇 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
 
@@ -3715,7 +3719,7 @@ async def show_live_payouts_pairs(query, broker: str):
 
 def _build_live_payouts_text(broker_name: str, pairs_with_payouts: list) -> str:
     """Build the live payouts message text."""
-    return f"""{emj('diamond_premium', '💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂 - {broker_name}
+    return f"""{e('💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂 - {broker_name}
 
 👇 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃 𝚁𝙰𝚃𝙴𝚂
 
@@ -3786,7 +3790,7 @@ async def _auto_update_live_payouts_loop(bot, chat_id, message_id, broker):
 
 async def show_news_signal(query):
     text = f"""
-{emj('sparkles', '✨')} 𝑵𝑬𝑾𝑺 𝑺𝑰𝑮𝑵𝑨𝑳
+{e('✨')} 𝑵𝑬𝑾𝑺 𝑺𝑰𝑮𝑵𝑨𝑳
 
 𝑳𝒂𝒕𝒆𝒔𝒕 𝑴𝒂𝒓𝒌𝒆𝒕 𝑵𝒆𝒘𝒔:
 
@@ -3796,13 +3800,13 @@ async def show_news_signal(query):
 
 𝑼𝒑𝒅𝒂𝒕𝒆𝒅: {datetime.now().strftime('%H:%M')}
 
-{emj('warning', '⚠️')} 𝑵𝒆𝒘𝒔 𝒄𝒂𝒏 𝒂𝒇𝒇𝒆𝒄𝒕 𝒎𝒂𝒓𝒌𝒆𝒕 𝒗𝒐𝒍𝒂𝒕𝒊𝒍𝒊𝒕𝒚
+{e('⚠️')} 𝑵𝒆𝒘𝒔 𝒄𝒂𝒏 𝒂𝒇𝒇𝒆𝒄𝒕 𝒎𝒂𝒓𝒌𝒆𝒕 𝒗𝒐𝒍𝒂𝒕𝒊𝒍𝒊𝒕𝒚
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_ai_filter(query):
     text = f"""
-{emj('person', '👤')} 𝑨𝑰 𝑭𝑰𝑳𝑻𝑬𝑹
+{e('👤')} 𝑨𝑰 𝑭𝑰𝑳𝑻𝑬𝑹
 
 𝑨𝑰-𝑷𝒐𝒘𝒆𝒓𝒆𝒅 𝑺𝒊𝒈𝒏𝒂𝒍 𝑭𝒊𝒍𝒕𝒆𝒓:
 
@@ -3814,13 +3818,13 @@ async def show_ai_filter(query):
 𝑨𝑰 𝑺𝒕𝒂𝒕𝒖𝒔: 𝑨𝒄𝒕𝒊𝒗𝒆 ✅
 𝑳𝒂𝒔𝒕 𝑨𝒏𝒂𝒍𝒚𝒔𝒊𝒔: {datetime.now().strftime('%H:%M:%S')}
 
-{emj('lightning', '⚡')} 𝑨𝑰 𝒊𝒔 𝒂𝒏𝒂𝒍𝒚𝒛𝒊𝒏𝒈 𝒎𝒂𝒓𝒌𝒆𝒕𝒔 24/7
+{e('⚡')} 𝑨𝑰 𝒊𝒔 𝒂𝒏𝒂𝒍𝒚𝒛𝒊𝒏𝒈 𝒎𝒂𝒓𝒌𝒆𝒕𝒔 24/7
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_ai_assistant(query):
     text = f"""
-{emj('robot', '🤖')} 𝑨𝑰 𝑨𝑺𝑺𝑰𝑺𝑻𝑨𝑵𝑻
+{e('🤖')} 𝑨𝑰 𝑨𝑺𝑺𝑰𝑺𝑻𝑨𝑵𝑻
 
 𝒀𝒐𝒖𝒓 𝑨𝑰 𝑻𝒓𝒂𝒅𝒊𝒏𝒈 𝑨𝒔𝒔𝒊𝒔𝒕𝒂𝒏𝒕:
 
@@ -3830,15 +3834,15 @@ async def show_ai_assistant(query):
 • 𝑹𝒊𝒔𝒌 𝒎𝒂𝒏𝒂𝒈𝒆𝒎𝒆𝒏𝒕
 • 𝑺𝒕𝒓𝒂𝒕𝒆𝒈𝒚 𝒕𝒊𝒑𝒔
 
-{emj('lightning', '⚡')} 𝑨𝒔𝒌 𝒎𝒆 𝒂𝒏𝒚𝒕𝒉𝒊𝒏𝒈 𝒂𝒃𝒐𝒖𝒕 𝒕𝒓𝒂𝒅𝒊𝒏𝒈!
+{e('⚡')} 𝑨𝒔𝒌 𝒎𝒆 𝒂𝒏𝒚𝒕𝒉𝒊𝒏𝒈 𝒂𝒃𝒐𝒖𝒕 𝒕𝒓𝒂𝒅𝒊𝒏𝒈!
 
-{emj('warning', '⚠️')} 𝑵𝒐𝒕 𝒇𝒊𝒏𝒂𝒏𝒄𝒊𝒂𝒍 𝒂𝒅𝒗𝒊𝒄𝒆
+{e('⚠️')} 𝑵𝒐𝒕 𝒇𝒊𝒏𝒂𝒏𝒄𝒊𝒂𝒍 𝒂𝒅𝒗𝒊𝒄𝒆
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_formatter(query):
     text = f"""
-{emj('swirl', '🌀')} 𝑭𝑶𝑹𝑴𝑨𝑻𝑻𝑬𝑹
+{e('🌀')} 𝑭𝑶𝑹𝑴𝑨𝑻𝑻𝑬𝑹
 
 𝑺𝒊𝒈𝒏𝒂𝒍 𝑭𝒐𝒓𝒎𝒂𝒕𝒕𝒆𝒓:
 
@@ -3849,13 +3853,13 @@ async def show_formatter(query):
 
 𝑺𝒆𝒏𝒅 𝒚𝒐𝒖𝒓 𝒔𝒊𝒈𝒏𝒂𝒍 𝒕𝒐 𝒇𝒐𝒓𝒎𝒂𝒕 𝒊𝒕.
 
-{emj('lightning', '⚡')} 𝑸𝒖𝒊𝒄𝒌 𝒂𝒏𝒅 𝒆𝒂𝒔𝒚 𝒇𝒐𝒓𝒎𝒂𝒕𝒕𝒊𝒏𝒈
+{e('⚡')} 𝑸𝒖𝒊𝒄𝒌 𝒂𝒏𝒅 𝒆𝒂𝒔𝒚 𝒇𝒐𝒓𝒎𝒂𝒕𝒕𝒊𝒏𝒈
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_market_filters(query):
     text = f"""
-{emj('stats', '📊')} 𝑴𝑨𝑹𝑲𝑬𝑬𝑻 𝑭𝑰𝑳𝑻𝑬𝑹𝑺
+{e('📊')} 𝑴𝑨𝑹𝑲𝑬𝑬𝑻 𝑭𝑰𝑳𝑻𝑬𝑹𝑺
 
 𝑨𝒗𝒂𝒊𝒍𝒂𝒃𝒍𝒆 𝑭𝒊𝒍𝒕𝒆𝒓𝒔:
 
@@ -3866,21 +3870,21 @@ async def show_market_filters(query):
 
 𝑨𝒄𝒕𝒊𝒗𝒆 𝑭𝒊𝒍𝒕𝒆𝒓𝒔: 4
 
-{emj('lightning', '⚡')} 𝑭𝒊𝒍𝒕𝒆𝒓𝒔 𝒉𝒆𝒍𝒑 𝒇𝒊𝒏𝒅 𝒕𝒉𝒆 𝒃𝒆𝒔𝒕 𝒔𝒊𝒈𝒏𝒂𝒍𝒔
+{e('⚡')} 𝑭𝒊𝒍𝒕𝒆𝒓𝒔 𝒉𝒆𝒍𝒑 𝒇𝒊𝒏𝒅 𝒕𝒉𝒆 𝒃𝒆𝒔𝒕 𝒔𝒊𝒈𝒏𝒂𝒍𝒔
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_swap_cp(query):
     """Swap C/P is currently disabled."""
     text = f"""
-{emj('swap', '🔄')} 𝑺𝑾𝑨𝑷 𝑪/𝑷
+{e('🔄')} 𝑺𝑾𝑨𝑷 𝑪/𝑷
 
-{emj('warning', '⚠️')} 𝑪𝑶𝑴𝑰𝑵𝑮 𝑺𝑶𝑶𝑵
+{e('⚠️')} 𝑪𝑶𝑴𝑰𝑵𝑮 𝑺𝑶𝑶𝑵
 
 This feature is currently under development
 and will be available soon.
 
-{emj('lightning', '⚡')} Stay tuned for updates!
+{e('⚡')} Stay tuned for updates!
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
@@ -3903,17 +3907,17 @@ async def show_tz_converter(query):
         pass
 
     if user_tz:
-        tz_text = f"""{emj('check', '✅')} 𝒀𝒐𝒖𝒓 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆: UTC{user_tz}
+        tz_text = f"""{e('✅')} 𝒀𝒐𝒖𝒓 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆: UTC{user_tz}
 
 💡 All signal times will be displayed
 in your selected timezone."""
     else:
-        tz_text = f"""{emj('warning', '⚠️')} 𝑵𝒐 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆 𝑺𝒆𝒕
+        tz_text = f"""{e('⚠️')} 𝑵𝒐 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆 𝑺𝒆𝒕
 
 Select your timezone below to convert
 signal times to your local time."""
 
-    text = f"""{emj('alarm', '⏰')} 𝑻𝑰𝑴𝑬𝒁𝑶𝑵𝑬 𝑺𝑬𝑳𝑬𝑪𝑻𝑶𝑹
+    text = f"""{e('⏰')} 𝑻𝑰𝑴𝑬𝒁𝑶𝑵𝑬 𝑺𝑬𝑳𝑬𝑪𝑻𝑶𝑹
 
 {tz_text}
 
@@ -3965,14 +3969,14 @@ async def set_user_timezone(query, user_id, utc_offset):
     except Exception as e:
         logging.warning(f"Failed to save timezone: {e}")
 
-    text = f"""{emj('check', '✅')} 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆 𝑼𝒑𝒅𝒂𝒕𝒆𝒅!
+    text = f"""{e('✅')} 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆 𝑼𝒑𝒅𝒂𝒕𝒆𝒅!
 
-{emj('alarm', '⏰')} 𝒀𝒐𝒖𝒓 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆: UTC{utc_offset}
+{e('⏰')} 𝒀𝒐𝒖𝒓 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆: UTC{utc_offset}
 
 💡 All signal times will now be displayed
 in your selected timezone (UTC{utc_offset}).
 
-{emj('lightning', '⚡')} You can change your timezone
+{e('⚡')} You can change your timezone
 anytime from the TZ Converter menu."""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Timezone", callback_data="tz_converter", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["alarm"])],
@@ -3995,16 +3999,16 @@ async def set_user_schedule(query, user_id, start_time, end_time):
     except Exception as e:
         logging.warning(f"Failed to save schedule: {e}")
 
-    text = f"""{emj('check', '✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒆𝒕 𝑺𝒖𝒄𝒄𝒆𝒔𝒔𝒇𝒖𝒍𝒍𝒚!
+    text = f"""{e('✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒆𝒕 𝑺𝒖𝒄𝒄𝒆𝒔𝒔𝒇𝒖𝒍𝒍𝒚!
 
-{emj('clock', '⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {start_time}
-{emj('clock', '⏰')} 𝑬𝒏𝒅 𝑻𝒊𝒎𝒆: {end_time}
+{e('⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {start_time}
+{e('⏰')} 𝑬𝒏𝒅 𝑻𝒊𝒎𝒆: {end_time}
 
 💡 The bot will automatically send you
 trading signals during this time period
 every day.
 
-{emj('lightning', '⚡')} You can pause or delete the schedule
+{e('⚡')} You can pause or delete the schedule
 from the Time Schedule menu."""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Schedule", callback_data="time_list", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
@@ -4035,7 +4039,7 @@ async def delete_user_schedule(query, user_id):
     except Exception as e:
         logging.warning(f"Failed to delete schedule: {e}")
 
-    text = f"""{emj('cross', '❌')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑫𝒆𝒍𝒆𝒕𝒆𝒅
+    text = f"""{e('❌')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑫𝒆𝒍𝒆𝒕𝒆𝒅
 
 Your signal schedule has been deleted.
 You will no longer receive automatic signals.
@@ -4053,7 +4057,7 @@ from the Time Schedule menu."""
 # ============================================================
 async def admin_new_signal(query, context):
     if not is_admin(query.from_user.id):
-        await safe_edit_message(query, f"{emj('cross', '❌')} Access Denied - Admins only", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_message(query, f"{e('❌')} Access Denied - Admins only", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return ConversationHandler.END
     text = f"""
 📝 Create New Signal
@@ -4064,7 +4068,7 @@ Currency | Direction | Entry Price | Expiry
 Example:
 EUR/USD | CALL | 1.0856 | M1
 
-{emj('warning', '⚠️')} Send /cancel to cancel
+{e('⚠️')} Send /cancel to cancel
 """
     await safe_edit_message(query, text, parse_mode=ParseMode.HTML)
     return WAITING_SIGNAL_INPUT
@@ -4075,19 +4079,19 @@ async def receive_signal_input(update: Update, context: ContextTypes.DEFAULT_TYP
     text = update.message.text
     parts = [p.strip() for p in text.split("|")]
     if len(parts) != 4:
-        await update.message.reply_text(f"{emj('warning', '⚠️')} Invalid format! Use:\nCurrency | Direction | Price | Expiry", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"{e('⚠️')} Invalid format! Use:\nCurrency | Direction | Price | Expiry", parse_mode=ParseMode.HTML)
         return WAITING_SIGNAL_INPUT
     currency, direction, entry_price, expiry = parts
     try:
         price = float(entry_price)
     except ValueError:
-        await update.message.reply_text(f"{emj('warning', '⚠️')} Price must be a number", parse_mode=ParseMode.HTML)
+        await update.message.reply_text(f"{e('⚠️')} Price must be a number", parse_mode=ParseMode.HTML)
         return WAITING_SIGNAL_INPUT
 
     signal_id = add_signal(currency, direction, price, expiry)
     context.user_data["pending_signal"] = {"id": signal_id, "currency": currency, "direction": direction, "price": price, "expiry": expiry}
     text = f"""
-{emj('check', '✅')} Signal Ready
+{e('✅')} Signal Ready
 
 📊 Currency: {currency}
 📈 Direction: {direction}
@@ -4104,7 +4108,7 @@ async def admin_confirm_send(query, context):
         return
     signal = context.user_data.get("pending_signal")
     if not signal:
-        await safe_edit_message(query, f"{emj('warning', '⚠️')} No pending signal", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_message(query, f"{e('⚠️')} No pending signal", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return
 
     signal_text = f"""
@@ -4117,13 +4121,13 @@ async def admin_confirm_send(query, context):
 
 🕐 Signal Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-{emj('warning', '⚠️')} Trade responsibly - Signals are advisory only
+{e('⚠️')} Trade responsibly - Signals are advisory only
 """
     try:
         await context.bot.send_message(chat_id=SIGNALS_CHANNEL_ID, text=signal_text, parse_mode=ParseMode.HTML)
-        success_msg = f"{emj('check', '✅')} Signal sent to channel successfully!"
+        success_msg = f"{e('✅')} Signal sent to channel successfully!"
     except Exception as e:
-        success_msg = f"{emj('cross', '❌')} Send failed: {str(e)}"
+        success_msg = f"{e('❌')} Send failed: {str(e)}"
 
     context.user_data.pop("pending_signal", None)
     await safe_edit_message(query, f"{success_msg}\n\nBack to control panel:", reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
@@ -4132,10 +4136,10 @@ async def admin_broadcast(query, context):
     if not is_admin(query.from_user.id):
         return
     text = f"""
-{emj('speaker', '📣')} Broadcast Message to All Users
+{e('📣')} Broadcast Message to All Users
 
 Send the message you want to broadcast:
-{emj('warning', '⚠️')} Send /cancel to cancel
+{e('⚠️')} Send /cancel to cancel
 
 Total Users: {get_all_users_count()}
 """
@@ -4149,15 +4153,15 @@ async def receive_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     users = get_all_users()
     sent = 0
     failed = 0
-    status_msg = await update.message.reply_text(f"{emj('rocket', '🚀')} Sending... (0/{len(users)})")
+    status_msg = await update.message.reply_text(f"{e('🚀')} Sending... (0/{len(users)})")
     for user in users:
         try:
-            await context.bot.send_message(chat_id=user["user_id"], text=f"{emj('speaker', '📣')} Message from Admin:\n\n{message}", parse_mode=ParseMode.HTML)
+            await context.bot.send_message(chat_id=user["user_id"], text=f"{e('📣')} Message from Admin:\n\n{message}", parse_mode=ParseMode.HTML)
             sent += 1
         except Exception:
             failed += 1
 
-    await status_msg.edit_text(f"{emj('check', '✅')} Broadcast completed!\n\n📤 Sent: {sent}\n{emj('cross', '❌')} Failed: {failed}", reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
+    await status_msg.edit_text(f"{e('✅')} Broadcast completed!\n\n📤 Sent: {sent}\n{e('❌')} Failed: {failed}", reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
     return ConversationHandler.END
 
 async def admin_stats(query):
@@ -4174,14 +4178,14 @@ async def admin_stats(query):
     win_rate = (wins / total_signals * 100) if total_signals > 0 else 0
 
     text = f"""
-{emj('stats', '📊')} Bot Statistics
+{e('📊')} Bot Statistics
 
 👥 Users:
 • Total Users: {users_count}
 • VIP Subscribers: {premium_count}
 • Total Referrals: {total_referrals}
 
-{emj('chart', '📈')} Signals:
+{e('📈')} Signals:
 • Winning signals: {wins}
 • Losing signals: {losses}
 • Win rate: {win_rate:.1f}%
@@ -4195,7 +4199,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.pop("admin_creating_signal", None)
     context.user_data.pop("admin_broadcasting", None)
     context.user_data.pop("pending_signal", None)
-    await update.message.reply_text(f"{emj('cross', '❌')} Operation cancelled", reply_markup=get_main_menu_keyboard(), parse_mode=ParseMode.HTML)
+    await update.message.reply_text(f"{e('❌')} Operation cancelled", reply_markup=get_main_menu_keyboard(), parse_mode=ParseMode.HTML)
     return ConversationHandler.END
 
 async def track_channel_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -4215,7 +4219,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 async def post_init(application):
     me = await application.bot.get_me()
     logger.info("=" * 50)
-    logger.info(f"{emj('robot', '🤖')} Bot Info:\n   📛 Name: {me.first_name}\n   🔗 Username: @{me.username}\n   🆔 ID: {me.id}")
+    logger.info(f"{e('🤖')} Bot Info:\n   📛 Name: {me.first_name}\n   🔗 Username: @{me.username}\n   🆔 ID: {me.id}")
     global BOT_USERNAME
     if BOT_USERNAME in ["your_bot_username", "", None]:
         BOT_USERNAME = me.username
@@ -4226,11 +4230,11 @@ def main():
         logger.error("❌ Configuration incomplete! Edit BOT_TOKEN in this file.")
         sys.exit(1)
 
-    logger.info(f"{emj('stats', '📊')} Initializing database...")
+    logger.info(f"{e('📊')} Initializing database...")
     init_db()
-    logger.info(f"{emj('check', '✅')} Database initialized successfully")
+    logger.info(f"{e('✅')} Database initialized successfully")
 
-    logger.info(f"{emj('robot', '🤖')} Starting the bot...")
+    logger.info(f"{e('🤖')} Starting the bot...")
     application = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
 
     application.add_handler(CommandHandler("start", start))
@@ -4291,8 +4295,8 @@ def main():
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("=" * 50)
-    logger.info(f"{emj('rocket', '🚀')} Advanced Trading Signals Bot is running!")
-    logger.info(f"{emj('sparkles', '✨')} All emojis are premium custom emojis!")
+    logger.info(f"{e('🚀')} Advanced Trading Signals Bot is running!")
+    logger.info(f"{e('✨')} All emojis are premium custom emojis!")
     logger.info("=" * 50)
     logger.info("⏹️  Press Ctrl+C to stop the bot")
     logger.info("=" * 50)
