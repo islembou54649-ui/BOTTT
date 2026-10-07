@@ -561,13 +561,11 @@ def get_main_menu_keyboard():
         # === Schedule & Time ===
         [
             InlineKeyboardButton("TZ Converter", callback_data="tz_converter", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["alarm"]),
+            InlineKeyboardButton("Plans", url=WEBAPP_PLANS_URL, style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["diamond"]),
         ],
         [
             InlineKeyboardButton("Swap C/P", callback_data="swap_cp", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swap"]),
             InlineKeyboardButton("Formatter", callback_data="formatter", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swirl"]),
-        ],
-        [
-            InlineKeyboardButton("Plans", url=WEBAPP_PLANS_URL, style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["diamond"]),
         ],
         # === Plans & Upgrade ===
         [
