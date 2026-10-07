@@ -1263,7 +1263,7 @@ async def show_time_list(query):
         pass
 
     if scheduled_time and scheduled_time.get("start_time"):
-        status = "{e('✅')} Active" if scheduled_time.get("enabled") else "{e('⏸️')} Paused"
+        status = f"{e('✅')} Active" if scheduled_time.get("enabled") else f"{e('⏸️')} Paused"
         schedule_text = f"""{e('✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒕𝒂𝒕𝒖𝒔: {status}
 
 {e('⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {scheduled_time['start_time']}
@@ -1671,7 +1671,7 @@ async def show_time_session(query):
     if sessions:
         sessions_text = ""
         for i, s in enumerate(sessions, 1):
-            status = "{e('✅')}" if s["enabled"] else "{e('⏸️')}"
+            status = e('✅') if s["enabled"] else e('⏸️')
             sessions_text += f"\n{i}. {status} {s['start_time']} - {s['end_time']}"
         schedule_text = f"""{e('✅')} 𝒀𝒐𝒖𝒓 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆𝒅 𝑺𝒆𝒔𝒔𝒊𝒐𝒏𝒔:
 {sessions_text}"""
@@ -3484,9 +3484,9 @@ Select the platform to view results for:
 
 async def show_future_results_platform(query, platform):
     if platform == "quotex":
-        results = [("EUR/USD OTC", "CALL", "WIN", "{e('✅')}", "1.0856 → 1.0862"), ("GBP/JPY OTC", "PUT", "WIN", "{e('✅')}", "189.42 → 189.18"), ("USD/CAD OTC", "CALL", "LOSS", "{e('❌')}", "1.3642 → 1.3639"), ("AUD/USD OTC", "PUT", "WIN", "{e('✅')}", "0.6582 → 0.6571"), ("EUR/GBP OTC", "CALL", "WIN", "{e('✅')}", "0.8541 → 0.8553")]
+        results = [("EUR/USD OTC", "CALL", "WIN", e('✅'), "1.0856 → 1.0862"), ("GBP/JPY OTC", "PUT", "WIN", e('✅'), "189.42 → 189.18"), ("USD/CAD OTC", "CALL", "LOSS", e('❌'), "1.3642 → 1.3639"), ("AUD/USD OTC", "PUT", "WIN", e('✅'), "0.6582 → 0.6571"), ("EUR/GBP OTC", "CALL", "WIN", e('✅'), "0.8541 → 0.8553")]
     else:
-        results = [("BTC/USD", "CALL", "WIN", "{e('✅')}", "67250 → 67800"), ("ETH/USD", "PUT", "WIN", "{e('✅')}", "3450 → 3420"), ("Gold/XAU", "CALL", "LOSS", "{e('❌')}", "2034 → 2031"), ("Oil/WTI", "PUT", "WIN", "{e('✅')}", "78.5 → 77.9"), ("Silver/XAG", "CALL", "WIN", "{e('✅')}", "24.1 → 24.5")]
+        results = [("BTC/USD", "CALL", "WIN", e('✅'), "67250 → 67800"), ("ETH/USD", "PUT", "WIN", e('✅'), "3450 → 3420"), ("Gold/XAU", "CALL", "LOSS", e('❌'), "2034 → 2031"), ("Oil/WTI", "PUT", "WIN", e('✅'), "78.5 → 77.9"), ("Silver/XAG", "CALL", "WIN", e('✅'), "24.1 → 24.5")]
     results_text = "\n\n".join([f"{e('📊')} {r[0]} | {r[1]}\n{r[3]} Result: {r[2]}\n{e('📈')} Movement: {r[4]}" for r in results])
     wins = sum(1 for r in results if r[2] == "WIN")
     total = len(results)
@@ -3544,7 +3544,7 @@ Your referral link:
     if referrals:
         for ref in referrals[:5]:
             name = ref.get("first_name") or ref.get("username") or "User"
-            joined = f"{e('✅')} Joined" if ref.get("joined_channel") else "{e('⏳')} Pending"
+            joined = f"{e('✅')} Joined" if ref.get("joined_channel") else f"{e('⏳')} Pending"
             text += f"\n• {name} - {joined}"
     else:
         text += f"\nNo referrals yet. Share your link to get started!"
@@ -3650,7 +3650,8 @@ async def show_ratings(query):
     separator = "━━━━━━━━━━━━━━━━━━━"
     # Build stars display based on avg rating
     full_stars = int(avg_rating)
-    stars_display = "{e('⭐')}" * full_stars + "{e('✨')}" if (avg_rating - full_stars) >= 0.5 else "{e('⭐')}" * full_stars
+    has_half = (avg_rating - full_stars) >= 0.5
+    stars_display = e('⭐') * full_stars + (e('✨') if has_half else '')
 
     text = f"""{e('⭐')} 𝑹𝑨𝑻𝑬 𝑶𝑼𝑹 𝑩𝑶𝑻 {e('⭐')}
 
@@ -5547,7 +5548,7 @@ signal times to your local time."""
     keyboard_rows = []
     row = []
     for offset in offsets:
-        sign = "{e('➖')}" if offset.startswith("-") else "{e('➕')}"
+        sign = e('➖') if offset.startswith("-") else e('➕')
         label = f"UTC{offset}"
         # Highlight current selection
         if user_tz == offset:
