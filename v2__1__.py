@@ -420,6 +420,10 @@ def validate_config():
 # ============================================================
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bot_database.db")
 
+# Track active live payouts auto-update tasks by (chat_id, message_id) -> asyncio.Task
+# Used to cancel the loop when the user navigates away from the payouts page
+_LIVE_PAYOUTS_TASKS = {}
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -759,6 +763,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     user_id = query.from_user.id
     context.user_data["user_id"] = user_id
+
+    # Cancel any active live payouts auto-update task when user clicks a button
+    # (unless they're staying on the live payouts page)
+    try:
+        chat_id = query.message.chat_id
+        message_id = query.message.message_id
+        if data not in ("live_payouts_none", "live_payouts_refresh"):
+            _cancel_live_payouts_task(chat_id, message_id)
+    except Exception:
+        pass
 
     if data == "main_menu":
         await show_main_menu(query)
@@ -4886,9 +4900,24 @@ async def show_live_payouts_pairs(query, broker: str):
 
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
-    # Start auto-update loop using asyncio
+    # Cancel any existing auto-update task for this message
+    task_key = (chat_id, message_id)
+    old_task = _LIVE_PAYOUTS_TASKS.get(task_key)
+    if old_task and not old_task.done():
+        old_task.cancel()
+
+    # Start auto-update loop using asyncio and track it
     import asyncio
-    asyncio.create_task(_auto_update_live_payouts_loop(bot, chat_id, message_id, broker))
+    task = asyncio.create_task(_auto_update_live_payouts_loop(bot, chat_id, message_id, broker))
+    _LIVE_PAYOUTS_TASKS[task_key] = task
+
+
+def _cancel_live_payouts_task(chat_id, message_id):
+    """Cancel any active auto-update task for the given message (user navigated away)."""
+    task_key = (chat_id, message_id)
+    task = _LIVE_PAYOUTS_TASKS.pop(task_key, None)
+    if task and not task.done():
+        task.cancel()
 
 
 def _build_live_payouts_text(broker_name: str, pairs_with_payouts: list) -> str:
@@ -4931,36 +4960,55 @@ async def _auto_update_live_payouts_loop(bot, chat_id, message_id, broker):
     import asyncio
     import random as _random
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    task_key = (chat_id, message_id)
 
-    for _ in range(100):  # Max 100 updates (~5 minutes)
-        await asyncio.sleep(3)
-        try:
-            # Generate new random payouts
-            pairs_with_payouts = []
-            for pair_name, base_payout in SIGNAL_SESSION_PAIRS[:20]:
-                variation = _random.randint(-5, 5)
-                actual_payout = max(50, min(99, base_payout + variation))
-                pairs_with_payouts.append((pair_name, actual_payout))
-
-            text = _build_live_payouts_text(broker_name, pairs_with_payouts)
-            keyboard = _build_live_payouts_keyboard(broker, pairs_with_payouts)
-
-            await bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=text,
-                reply_markup=keyboard,
-                parse_mode=ParseMode.HTML,
-            )
-        except Exception as exc:
-            err_str = str(exc)
-            if "Message is not modified" in err_str or "message is not modified" in err_str.lower():
-                continue
-            elif "not found" in err_str.lower() or "deleted" in err_str.lower():
-                break  # Message deleted or user navigated away
-            else:
-                logging.warning(f"Auto-update live payouts error: {exc}")
+    try:
+        for _ in range(100):  # Max 100 updates (~5 minutes)
+            await asyncio.sleep(3)
+            # Check if we're still the active task for this message
+            current_task = _LIVE_PAYOUTS_TASKS.get(task_key)
+            if current_task is not asyncio.current_task():
+                # We've been replaced or cancelled, exit gracefully
                 break
+            try:
+                # Generate new random payouts
+                pairs_with_payouts = []
+                for pair_name, base_payout in SIGNAL_SESSION_PAIRS[:20]:
+                    variation = _random.randint(-5, 5)
+                    actual_payout = max(50, min(99, base_payout + variation))
+                    pairs_with_payouts.append((pair_name, actual_payout))
+
+                text = _build_live_payouts_text(broker_name, pairs_with_payouts)
+                keyboard = _build_live_payouts_keyboard(broker, pairs_with_payouts)
+
+                await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    text=text,
+                    reply_markup=keyboard,
+                    parse_mode=ParseMode.HTML,
+                )
+            except asyncio.CancelledError:
+                # Task was cancelled by user navigation, exit gracefully
+                raise
+            except Exception as exc:
+                err_str = str(exc)
+                if "Message is not modified" in err_str or "message is not modified" in err_str.lower():
+                    # Check if the message content changed (user navigated away)
+                    # If the message text doesn't match payouts format, stop the loop
+                    continue
+                elif "not found" in err_str.lower() or "deleted" in err_str.lower():
+                    break  # Message deleted or user navigated away
+                else:
+                    logging.warning(f"Auto-update live payouts error: {exc}")
+                    break
+    except asyncio.CancelledError:
+        # Task was cancelled (user navigated away), exit silently
+        pass
+    finally:
+        # Clean up task tracking
+        if _LIVE_PAYOUTS_TASKS.get(task_key) is asyncio.current_task():
+            _LIVE_PAYOUTS_TASKS.pop(task_key, None)
 
 async def show_news_signal(query):
     text = f"""
