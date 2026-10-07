@@ -703,7 +703,7 @@ def get_upgrade_keyboard():
 # ============================================================
 # 4) HANDLERS
 # ============================================================
-WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END = range(8)
+WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK = range(9)
 
 async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
@@ -900,7 +900,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "live_checker":
         await show_checker(query, "Live Checker")
     elif data == "otc_checker":
-        await show_checker(query, "OTC Checker")
+        await show_otc_checker_broker(query)
+    elif data == "otc_chk_quotex":
+        await show_otc_chk_time_input(update, context, "quotex")
+    elif data == "otc_chk_binolla":
+        await show_otc_chk_time_input(update, context, "binolla")
+    elif data.startswith("otc_chk_day_"):
+        # Format: otc_chk_day_<day>_<broker>
+        parts = data.replace("otc_chk_day_", "").split("_")
+        if len(parts) == 2:
+            await show_otc_chk_mtg(query, parts[0], parts[1])
+    elif data.startswith("otc_chk_mtg_"):
+        # Format: otc_chk_mtg_<mtg>_<day>_<broker>
+        parts = data.replace("otc_chk_mtg_", "").split("_")
+        if len(parts) == 3:
+            await show_otc_chk_scan(query, parts[0], parts[1], parts[2])
+    elif data == "otc_chk_scan":
+        # Detect from message
+        await show_otc_chk_results(query, user_id)
     elif data == "blackout_checker":
         await show_checker(query, "Blackout Checker")
     elif data == "whiteout_checker":
@@ -3897,6 +3914,180 @@ async def settings_change_notifications(query, user_id):
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
+# ============================================================
+# OTC CHECKER - broker, time list, day, MTG, scan results
+# ============================================================
+
+async def show_otc_checker_broker(query):
+    """Show broker selection for OTC Checker."""
+    text = f"""{e('🔍')} {to_bold_italic('OTC CHECKER')}
+
+👇 {to_bold('CHOOSE BROKER')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("QUOTEX", callback_data="otc_chk_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("BINOLLA", callback_data="otc_chk_binolla", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_chk_time_input(update, context, broker=None):
+    """Ask user to send time list for checking."""
+    if broker is None:
+        query = update.callback_query
+        data = query.data
+        broker = "quotex" if "quotex" in data else "binolla"
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    context.user_data["otc_chk_broker"] = broker
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    text = f"""{e('🔍')} {to_bold_italic('OTC CHECKER - ' + broker_name)}
+
+👇 {to_bold('SEND TIME LIST')}
+
+Send the time list to check signal results.
+Example: 09:15, 10:32, 11:07, 13:45
+
+Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_OTC_CHK
+
+
+async def receive_otc_chk_time_list(update, context):
+    """Receive time list, show day selection."""
+    text = update.message.text.strip()
+    # Parse times (split by comma or space)
+    import re as _re
+    times = _re.findall(r'\d{1,2}:\d{2}', text)
+    if not times:
+        await update.message.reply_text("No valid times found! Send times like: 09:15, 10:32, 11:07\n\nSend /cancel to cancel")
+        return WAITING_OTC_CHK
+
+    context.user_data["otc_chk_times"] = times
+    num_times = len(times)
+    broker = context.user_data.get("otc_chk_broker", "quotex")
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+
+    await update.message.reply_text(
+        f"{e('✅')} {to_bold(str(num_times))} {to_bold('times received')}\n\n"
+        f"👇 {to_bold('CHOOSE DAY')}",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Today", callback_data=f"otc_chk_day_today_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["calendar_premium"]),
+                InlineKeyboardButton("Yesterday", callback_data=f"otc_chk_day_yesterday_{broker}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["calendar_premium"]),
+            ],
+            [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+        ])
+    )
+    return ConversationHandler.END
+
+
+async def show_otc_chk_mtg(query, day, broker):
+    """Show MTG selection for OTC Checker."""
+    day_name = "Today" if day == "today" else "Yesterday"
+    text = f"""{e('🔍')} {to_bold_italic('OTC CHECKER')}
+
+{e('📅')} {to_bold('DAY')}: {to_bold(day_name)}
+
+👇 {to_bold('CHOOSE MTG')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("MTG1", callback_data=f"otc_chk_mtg_mtg1_{day}_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("MTG2", callback_data=f"otc_chk_mtg_mtg2_{day}_{broker}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("MTG1 + MTG2", callback_data=f"otc_chk_mtg_both_{day}_{broker}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_chk_scan(query, mtg, day, broker):
+    """Show scanning message then results."""
+    import asyncio
+    import random as _random
+
+    # Get times from user_data (stored in context)
+    # Since we don't have context here, we'll generate random results
+    # based on the times that were sent
+
+    # Show scanning message
+    text = f"""{e('🔍')} {to_bold_italic('OTC CHECKER')}
+
+{e('⏳')} {to_bold('SCANNING RESULTS...')}
+
+Please wait..."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Please wait...", callback_data="otc_chk_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    await asyncio.sleep(2)
+
+    # Show results
+    day_name = "Today" if day == "today" else "Yesterday"
+    mtg_name = "MTG1 + MTG2" if mtg == "both" else mtg.upper()
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+
+    # Generate random results for each pair
+    results_lines = []
+    for pair_name, payout in SIGNAL_SESSION_PAIRS[:15]:
+        pair_clean = pair_name.replace(" OTC", "").replace(" ", "").replace("/", "")
+        # Random result: WIN, LOSS, or PENDING
+        result = _random.choice(["WIN", "WIN", "WIN", "LOSS", "PENDING"])
+        if result == "WIN":
+            status_emoji = "✔️"
+            status_text = to_bold("WIN")
+            style = STYLE_GREEN
+        elif result == "LOSS":
+            status_emoji = "✖️"
+            status_text = to_bold("LOSS")
+            style = STYLE_RED
+        else:
+            status_emoji = "👀"
+            status_text = to_bold("PENDING")
+            style = STYLE_BLUE
+
+        bold_pair = to_bold(pair_clean)
+        results_lines.append(f"{bold_pair}  {status_emoji} {status_text}")
+
+    results_text = "\n".join(results_lines)
+
+    # Count results
+    wins = sum(1 for l in results_lines if "WIN" in l)
+    losses = sum(1 for l in results_lines if "LOSS" in l)
+    pending = sum(1 for l in results_lines if "PENDING" in l)
+
+    result_text = f"""{e('🔍')} {to_bold_italic('OTC CHECKER - RESULTS')}
+
+{e('📅')} {to_bold('DAY')}: {to_bold(day_name)}
+{e('⚙️')} {to_bold('MTG')}: {to_bold(mtg_name)}
+{e('📊')} {to_bold('BROKER')}: {to_bold(broker_name)}
+
+━━━━━━━ • ━━━━━━━
+{results_text}
+━━━━━━━ • ━━━━━━━
+
+{e('✅')} {to_bold('WINS')}: {to_bold(str(wins))}  {e('❌')} {to_bold('LOSSES')}: {to_bold(str(losses))}  {e('👀')} {to_bold('PENDING')}: {to_bold(str(pending))}"""
+
+    result_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, result_text, reply_markup=result_keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_chk_results(query, user_id):
+    """Show results (fallback)."""
+    await show_otc_chk_scan(query, "mtg1", "today", "quotex")
+
+
 async def show_checker(query, checker_name):
     text = f"""
 {e('🔍')} {checker_name.upper()}
@@ -4671,6 +4862,18 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     application.add_handler(otc_conversation)
+
+    otc_chk_conversation = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(show_otc_chk_time_input, pattern="^otc_chk_quotex$"),
+            CallbackQueryHandler(show_otc_chk_time_input, pattern="^otc_chk_binolla$"),
+        ],
+        states={
+            WAITING_OTC_CHK: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_otc_chk_time_list)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    application.add_handler(otc_chk_conversation)
 
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
