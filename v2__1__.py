@@ -1,4 +1,4 @@
-"""
+f"""
 ================================================================
 Advanced Trading Signals Telegram Bot (Single File Version)
 ================================================================
@@ -12,10 +12,10 @@ Features:
 - Broadcast & signal sending to channel
 - Welcome message + referral system
 - Auto-fetches bot username on startup
-- <tg-emoji emoji-id=\"5231101979903675433\">✨</tg-emoji> ALL EMOJIS ARE NOW PREMIUM COLORFUL CUSTOM EMOJIS <tg-emoji emoji-id=\"5231101979903675433\">✨</tg-emoji>
-- <tg-emoji emoji-id=\"5298780919207844086\">✅</tg-emoji> FIXED: Callback query timeout error
-- <tg-emoji emoji-id=\"5298780919207844086\">✅</tg-emoji> UPDATED: Future Signals icon (Neon Diamond)
-- <tg-emoji emoji-id=\"5298780919207844086\">✅</tg-emoji> UPDATED: Token input from terminal
+- <tg-emoji emoji-id=\"5231101979903675433\">{e('✨')}</tg-emoji> ALL EMOJIS ARE NOW PREMIUM COLORFUL CUSTOM EMOJIS <tg-emoji emoji-id=\"5231101979903675433\">{e('✨')}</tg-emoji>
+- <tg-emoji emoji-id=\"5298780919207844086\">{e('✅')}</tg-emoji> FIXED: Callback query timeout error
+- <tg-emoji emoji-id=\"5298780919207844086\">{e('✅')}</tg-emoji> UPDATED: Future Signals icon (Neon Diamond)
+- <tg-emoji emoji-id=\"5298780919207844086\">{e('✅')}</tg-emoji> UPDATED: Token input from terminal
 
 Just run: python bot.py
 ================================================================
@@ -158,13 +158,46 @@ _EMOJI_MAP_CACHE = {
     "🙏": "5472189549473963781",  # RestrictedEmoji - pray
     "🚀": "5217880283860194582",  # EffectEmoji - rocket
     "🛠": "5462921117423384478",  # GameEmoji - tools
+    # ALL other emojis used in bot messages
+    "⏰": "5413704112220949842",  # RestrictedEmoji - alarm
+    "⏳": "5217697679030637222",  # EffectEmoji - hourglass
+    "✅": "5298780919207844086",  # SparklesEmoji - check
+    "✔️": "5188216731453103384",  # RestrictedEmoji - heavy check
+    "❓": "5206479194388713063",  # EffectEmoji - question
+    "⭐": "5267500801240092311",  # FinanceEmoji - star
+    "🎁": "5411271889421086677",  # NeonEmoji - gift
+    "🎯": "5350460637182993292",  # RestrictedEmoji - target
+    "🏆": "5409008750893734809",  # RestrictedEmoji - trophy
+    "🐾": "5188308218551475917",  # RestrictedEmoji - paw prints
+    "👇": "5470177992950946662",  # RestrictedEmoji - point down
+    "👑": "5467406098367521267",  # RestrictedEmoji - crown
+    "👥": "5372926953978341366",  # RestrictedEmoji - busts
+    "💡": "5193127592764394874",  # EffectEmoji - light bulb
+    "💰": "5456319774164269402",  # GlowingFont - money bag
+    "💳": "5267300544094948794",  # SparklesEmoji - credit card
+    "📅": "5364233403300330811",  # TopicIcons - calendar
+    "📋": "5334882760735598374",  # EMOJI_IDS clipboard fallback
+    "📌": "5397782960512444700",  # NewsEmoji - pushpin
+    "📰": "5433982607035474385",  # RestrictedEmoji - newspaper
+    "🔔": "5242628160297641831",  # RestrictedEmoji - bell
+    "🔥": "5220166546491459639",  # EffectEmoji - fire
+    "🔵": "5375129357373165375",  # EMOJI_IDS link fallback
+    "🕊": "5434121252874756456",  # RestrictedEmoji - dove
+    "🕐": "5445010743021818722",  # PeriodicTable - clock
+    "🟢": "5416081784641168838",  # NewsEmoji - green circle
+    "🟥": "5411225014148014586",  # NewsEmoji - red square fallback
+    "🟦": "5375129357373165375",  # blue square -> link fallback
+    "🟩": "5416081784641168838",  # green square -> green circle fallback
+    "🦌": "5427137412713161135",  # RestrictedEmoji - deer
+    "🆔": "5422683699130933153",  # RestrictedEmoji - ID (user fallback)
+    "🪪": "5422683699130933153",  # RestrictedEmoji - ID card
+    "👤": "5373012449597335010",  # RestrictedEmoji - person
+    "🤖": "5372981976804366741",  # RestrictedEmoji - robot
+    "📊": "5431577498364158238",  # RestrictedEmoji - bar chart
     # Fallback emojis (emojis not in standard sets)
-    "⏹️": EMOJI_IDS.get("tools", ""),
-    "⏹": EMOJI_IDS.get("tools", ""),
-    "🆔": EMOJI_IDS.get("user", ""),
-    "📋": EMOJI_IDS.get("clipboard", ""),
-    "📛": EMOJI_IDS.get("user", ""),
-    "🔵": EMOJI_IDS.get("link", ""),
+    "⏹️": "5462921117423384478",  # tools fallback
+    "⏹": "5462921117423384478",   # tools fallback
+    "📛": "5422683699130933153",   # user fallback
 }
 _EMOJI_MAP_LOADED = True  # Already loaded - no file needed
 
@@ -616,16 +649,16 @@ def get_platform_keyboard(return_to):
     ])
 
 def get_ratings_keyboard():
-    """Rating keyboard with 1-5 stars and back button."""
+    f"""Rating keyboard with 1-5 stars and back button."""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("1 ⭐", callback_data="rate_1", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
-            InlineKeyboardButton("2 ⭐⭐", callback_data="rate_2", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
-            InlineKeyboardButton("3 ⭐⭐⭐", callback_data="rate_3", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("1 {e('⭐')}", callback_data="rate_1", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("2 {e('⭐⭐')}", callback_data="rate_2", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("3 {e('⭐⭐⭐')}", callback_data="rate_3", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["star"]),
         ],
         [
-            InlineKeyboardButton("4 ⭐⭐⭐⭐", callback_data="rate_4", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
-            InlineKeyboardButton("5 ⭐⭐⭐⭐⭐", callback_data="rate_5", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("4 {e('⭐⭐⭐⭐')}", callback_data="rate_4", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("5 {e('⭐⭐⭐⭐⭐')}", callback_data="rate_5", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
         ],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
@@ -1042,7 +1075,7 @@ Duration: {plan['duration']}
 {e('⭐')} Included Features:
 {features_text}
 
-💳 To subscribe to this plan:
+{e('💳')} To subscribe to this plan:
 Contact technical support via the Support button in the main menu
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
@@ -1056,10 +1089,10 @@ async def show_request_signals(query):
 {e('🟢')} QUOTEX
   Best for binary options (OTC available)
 
-🔵 BINOLLA
+{e('🔵')} BINOLLA
   Fast execution + high payout rates
 
-👇 Choose a platform below:
+{e('👇')} Choose a platform below:
 """
     await safe_edit_message(query, text, reply_markup=get_platform_keyboard("request_signals"), parse_mode=ParseMode.HTML)
 
@@ -1079,7 +1112,7 @@ async def show_bot_signals(query, platform):
 
 {signals_text}
 
-📈 Platform Summary:
+{e('📈')} Platform Summary:
 • Active pairs: {len(platform_info['pairs'])}
 • Avg confidence: 90%
 • Sentiment: Bullish {e('📈')}
@@ -1099,7 +1132,7 @@ async def show_current_signals(query):
 {e('⏰')} Last Update: {datetime.now().strftime('%H:%M:%S')}
 {e('⚠️')} Trade responsibly - Signals are not a profit guarantee
 
-📌 To subscribe to premium instant signals, use the "Subscription Plans" button
+{e('📌')} To subscribe to premium instant signals, use the "Subscription Plans" button
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
@@ -1143,29 +1176,29 @@ You haven't set a signal schedule yet.
 
 ━━━━━━━━━━━━━━━━━━━━
 
-💡 𝑯𝒐𝒘 𝒊𝒕 𝒘𝒐𝒓𝒌𝒔:
+{e('💡')} 𝑯𝒐𝒘 𝒊𝒕 𝒘𝒐𝒓𝒌𝒔:
 Set a time period and the bot will
 automatically send you trading signals
-during that time every day."""
+during that time every day.f"""
 
     # Build keyboard rows as a list
     keyboard_rows = [
         [
-            InlineKeyboardButton("🌅 Morning 09:00-12:00", callback_data="set_schedule_09:00_12:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
-            InlineKeyboardButton("☀️ Afternoon 14:00-17:00", callback_data="set_schedule_14:00_17:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("{e('🌅')} Morning 09:00-12:00", callback_data="set_schedule_09:00_12:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("{e('☀️')} Afternoon 14:00-17:00", callback_data="set_schedule_14:00_17:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
         ],
         [
-            InlineKeyboardButton("🌆 Evening 19:00-22:00", callback_data="set_schedule_19:00_22:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
-            InlineKeyboardButton("🌙 Night 22:00-01:00", callback_data="set_schedule_22:00_01:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("{e('🌆')} Evening 19:00-22:00", callback_data="set_schedule_19:00_22:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("{e('🌙')} Night 22:00-01:00", callback_data="set_schedule_22:00_01:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
         ],
         [
-            InlineKeyboardButton("🕐 Full Day 00:00-23:59", callback_data="set_schedule_00:00_23:59", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("{e('🕐')} Full Day 00:00-23:59", callback_data="set_schedule_00:00_23:59", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
         ],
     ]
     if scheduled_time and scheduled_time.get("start_time"):
         keyboard_rows.append([
-            InlineKeyboardButton("⏸️ Pause Schedule", callback_data="pause_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
-            InlineKeyboardButton("🗑️ Delete Schedule", callback_data="delete_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+            InlineKeyboardButton("{e('⏸️')} Pause Schedule", callback_data="pause_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+            InlineKeyboardButton("{e('🗑️')} Delete Schedule", callback_data="delete_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
         ])
     keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])])
 
@@ -1269,9 +1302,9 @@ async def show_signal_session_pairs(query, broker: str, page: int):
 
 Page {page + 1}/{total_pages} · Selected: {len(selected_pairs)} pairs
 
-🟦 Blue = High payout (85%+)
-🟩 Green = Medium payout (70-84%)
-🟥 Red = Low payout (&lt;70%)"""
+{e('🟦')} Blue = High payout (85%+)
+{e('🟩')} Green = Medium payout (70-84%)
+{e('🟥')} Red = Low payout (&lt;70%)"""
     keyboard_rows = []
     # 2 buttons per row
     row = []
@@ -1533,13 +1566,13 @@ async def show_time_session(query):
 
 ━━━━━━━━━━━━━━━━━━━━
 
-💡 𝑯𝒐𝒘 𝒊𝒕 𝒘𝒐𝒓𝒌𝒔:
+{e('💡')} 𝑯𝒐𝒘 𝒊𝒕 𝒘𝒐𝒓𝒌𝒔:
 Set a time period and the bot will
 automatically send you trading signals
-during that time every day."""
+during that time every day.f"""
 
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➕ New Schedule", callback_data="new_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
+        [InlineKeyboardButton("{e('➕')} New Schedule", callback_data="new_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -1615,9 +1648,9 @@ async def receive_session_end(update: Update, context: ContextTypes.DEFAULT_TYPE
 {e('⏰')} 𝚂𝚃𝙰𝚁𝚃: {start_time}
 {e('⏰')} 𝙴𝙽𝙳:   {end_time}
 
-{e('👇')} 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼"""
+{e('👇')} 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼f"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("💾 Save Schedule", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
+        [InlineKeyboardButton("{e('💾')} Save Schedule", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
         [InlineKeyboardButton("Back to Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
     await update.message.reply_text(text_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -1664,9 +1697,9 @@ async def show_live_future(query):
 
 𝚁𝚎𝚚𝚞𝚎𝚜𝚝 𝚝𝚘 𝚟𝚎𝚛𝚒𝚏𝚢 𝚏𝚞𝚝𝚞𝚛𝚎 𝚜𝚒𝚐𝚗𝚊𝚕𝚜 𝚛𝚎𝚜𝚞𝚕𝚝𝚜.
 
-{e('👇')} 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙷𝙴𝙲𝙺:"""
+{e('👇')} 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙷𝙴𝙲𝙺:f"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📊 Check Results", callback_data="future_results", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("{e('📊')} Check Results", callback_data="future_results", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -1677,10 +1710,10 @@ async def show_live_future(query):
 # ============================================================
 
 async def show_otc_broker(query):
-    """Show broker selection for OTC Market FS."""
-    text = """📈 <b>OTC MARKET FS</b>
+    f"""Show broker selection for OTC Market FS."""
+    text = f"""{e('📈')} <b>OTC MARKET FS</b>
 
-👇 <b>CHOOSE BROKER</b>"""
+{e('👇')} <b>CHOOSE BROKER</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("QUOTEX", callback_data="otc_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -1811,7 +1844,7 @@ Time: {start_time} - {end_time}
 
 Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
-👇 <b>SELECT CURRENCY PAIRS</b>"""
+{e('👇')} <b>SELECT CURRENCY PAIRS</b>"""
     keyboard_rows = []
     row = []
     for i, (pair_name, payout) in enumerate(page_pairs):
@@ -1942,10 +1975,10 @@ async def otc_select_all(query, user_id):
 
 
 async def show_otc_direction(query, user_id):
-    """Show signal direction selection (CALL / PUT / BOTH)."""
-    text = """📈 <b>OTC MARKET FS</b>
+    f"""Show signal direction selection (CALL / PUT / BOTH)."""
+    text = f"""{e('📈')} <b>OTC MARKET FS</b>
 
-👇 <b>CHOOSE SIGNAL DIRECTION</b>"""
+{e('👇')} <b>CHOOSE SIGNAL DIRECTION</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("▲ CALL", callback_data="otc_dir_call", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -2003,9 +2036,9 @@ async def show_otc_analysis_ready(query, user_id):
 {e('🌐')} <b>Timezone:</b> UTC {user_tz}
 {e('⚙️')} <b>MTG:</b> {mtg_name}
 
-{e('👇')} <b>PRESS TO START ANALYSIS</b>"""
+{e('👇')} <b>PRESS TO START ANALYSIS</b>f"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🟢 Start Analysis", callback_data="otc_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
+        [InlineKeyboardButton("{e('🟢')} Start Analysis", callback_data="otc_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
         [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -2140,7 +2173,7 @@ and generating signals."""
 {signals_text}
 ━━━━━━━ • ━━━━━━━
 
-{e('✨')} {to_bold('BACK-TESTED')} ✔️
+{e('✨')} {to_bold('BACK-TESTED')} {e('✔️')}
 {e('💎')} {to_bold('USE SAFETY FOR BETTER RESULT')}"""
 
     final_keyboard = InlineKeyboardMarkup([
@@ -2293,7 +2326,7 @@ Time: {start_time} - {end_time}
 
 Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
-👇 <b>SELECT CURRENCY PAIRS</b>"""
+{e('👇')} <b>SELECT CURRENCY PAIRS</b>"""
     keyboard_rows = []
     row = []
     for i, (pair_name, payout) in enumerate(page_pairs):
@@ -2567,13 +2600,13 @@ async def show_blackout_final(query, user_id, analysis_type, duration, mtg_level
 {e('⚡')} {to_bold('FILTER')}: MTG {to_bold(str(mtg_level))}
 
 {e('⌛')} {to_bold('TIMEFRAME')}: {to_bold(duration)}
-{e('✨')} {to_bold('BACK-TESTED')} ✔️
+{e('✨')} {to_bold('BACK-TESTED')} {e('✔️')}
 
 ━━━━━━━ • ━━━━━━━
 {signals_text}
 ━━━━━━━ • ━━━━━━━
 
-{e('💎')} {to_bold('USE SAFETY FOR BETTER RESULT')} 🔥"""
+{e('💎')} {to_bold('USE SAFETY FOR BETTER RESULT')} {e('🔥')}"""
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
@@ -2586,10 +2619,10 @@ async def show_blackout_final(query, user_id, analysis_type, duration, mtg_level
 # ============================================================
 
 async def show_axtiron_broker(query):
-    """Show broker selection for Axtiron FS."""
-    text = """🐾 <b>AXTIRON FS</b>
+    f"""Show broker selection for Axtiron FS."""
+    text = f"""{e('🐾')} <b>AXTIRON FS</b>
 
-👇 <b>CHOOSE BROKER</b>"""
+{e('👇')} <b>CHOOSE BROKER</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("QUOTEX", callback_data="axtiron_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -2631,7 +2664,7 @@ Market: {market_name}
 Please wait while we scan
 the market for opportunities."""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⏳ Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
+        [InlineKeyboardButton("{e('⏳')} Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     # Wait 2 seconds then show pairs
@@ -2794,14 +2827,14 @@ async def show_axtiron_results(query, user_id):
         pass
 
     # Send first: "generating signals" message
-    wait_text = """🐾 <b>AXTIRON FS</b>
+    wait_text = f"""🐾 <b>AXTIRON FS</b>
 
-⏳ <b>GENERATING SIGNALS...</b>
+{e('⏳')} <b>GENERATING SIGNALS...</b>
 
 Please wait while we engineer
-your premium future signals."""
+your premium future signals.f"""
     wait_keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("⏳ Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
+        [InlineKeyboardButton("{e('⏳')} Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
     ])
     await safe_edit_message(query, wait_text, reply_markup=wait_keyboard, parse_mode=ParseMode.HTML)
     await asyncio.sleep(2)
@@ -2841,7 +2874,7 @@ your premium future signals."""
 {signals_text}
 ━━━━━━━ • ━━━━━━━
 
-🦌 {to_bold_italic('ENGINEERED TO DOMINATE')} 🕊"""
+{e('🦌')} {to_bold_italic('ENGINEERED TO DOMINATE')} {e('🕊')}"""
 
         # Each signal message gets its own Back button
         result_keyboard = InlineKeyboardMarkup([
@@ -2925,7 +2958,7 @@ to access this bot.
 Upgrade to: Weekly / Monthly / Gold
 to unlock all bots.
 
-👇 <b>TAP BELOW TO UPGRADE</b>"""
+{e('👇')} <b>TAP BELOW TO UPGRADE</b>"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Upgrade Now", callback_data="upgrade", style=STYLE_GREEN, icon_custom_emoji_id="5217880283860194582")],
         [InlineKeyboardButton("Back to Bots", callback_data="free_bots", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
@@ -2948,7 +2981,7 @@ If you believe this is an error, please contact support.
 Welcome Admin {e('👑')}
 
 Quick Statistics:
-👥 Users: {get_all_users_count()}
+{e('👥')} Users: {get_all_users_count()}
 {e('📊')} Today's Signals: {len(get_signals_stats())}
 
 Select the desired action:
@@ -3065,7 +3098,7 @@ async def show_future_results_platform(query, platform):
 {e('❌')} Losing signals: {total - wins}
 {e('📊')} Win rate: {win_rate:.0f}%
 
-🎯 To follow real-time results:
+{e('🎯')} To follow real-time results:
 """
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Results Channel", url=RESULTS_CHANNEL_URL, style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
@@ -3094,15 +3127,15 @@ Your referral link:
 {ref_link}
 
 {e('📊')} Your Statistics:
-👥 Referrals count: {ref_count}
-💎 Earned rewards: {ref_count * 5} points
+{e('👥')} Referrals count: {ref_count}
+{e('💎')} Earned rewards: {ref_count * 5} points
 
-🎁 How does the referral system work?
-1️⃣ Share your link with friends
-2️⃣ When they join the bot, you get credited
-3️⃣ Every 10 referrals = 1 free VIP month
+{e('🎁')} How does the referral system work?
+1{e('️⃣')} Share your link with friends
+2{e('️⃣')} When they join the bot, you get credited
+3{e('️⃣')} Every 10 referrals = 1 free VIP month
 
-📋 Recent Referrals List:
+{e('📋')} Recent Referrals List:
 """
     if referrals:
         for ref in referrals[:5]:
@@ -3130,7 +3163,7 @@ async def show_my_account(query, user_id):
     is_premium = user_data.get("is_premium", 0)
     plan_name = "Gold" if plan == "gold" else "Monthly" if plan == "monthly" else "Weekly" if plan == "weekly" else "Free"
     status = "VIP" if is_premium else "Regular User"
-    status_emoji = "👑" if is_premium else "🟢"
+    status_emoji = e("👑") if is_premium else e("🟢")
 
     name = user_data.get('first_name', 'Unknown')
     # Convert name to bold italic
@@ -3150,9 +3183,9 @@ async def show_my_account(query, user_id):
 
 {e('💎')} <b>PLAN:</b> {e('👑')} <b>{plan_name}</b>  {status_emoji} <b>Status:</b> <b>{status}</b>
 
-{e('📊')} <b>STATS:</b>  👥 <b>Referrals:</b> {ref_count}  💰 <b>Rewards:</b> {ref_count * 5} pts
+{e('📊')} <b>STATS:</b>  {e('👥')} <b>Referrals:</b> {ref_count}  {e('💰')} <b>Rewards:</b> {ref_count * 5} pts
 
-🏆 <b>ACHIEVEMENTS:</b>
+{e('🏆')} <b>ACHIEVEMENTS:</b>
 {e('✅')} <b>Bot Member</b>
 {e('⏳') + ' <b>Not Subscribed</b>' if not is_premium else e('✅') + ' <b>VIP Subscriber</b>'}  {e('⏳') + ' <b>No Referrals</b>' if ref_count == 0 else e('✅') + ' <b>Has Referrals</b>'}"""
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
@@ -3168,7 +3201,7 @@ We are here to help you anytime!
 • Support Group: via official channel
 • FAQ: below
 
-❓ Frequently Asked Questions:
+{e('❓')} Frequently Asked Questions:
 
 Q: How do I get signals?
 A: Click the "Current Signals" button in the main menu
@@ -3227,12 +3260,12 @@ async def show_ratings(query):
 
 {separator}
 
-👇 𝑻𝑨𝑷 𝑻𝑯𝑬 𝑵𝑼𝑴𝑩𝑬𝑹 𝑶𝑭 𝑺𝑻𝑨𝑹𝑺:
+{e('👇')} 𝑻𝑨𝑷 𝑻𝑯𝑬 𝑵𝑼𝑴𝑩𝑬𝑹 𝑶𝑭 𝑺𝑻𝑨𝑹𝑺:
 
-⭐ - 𝑷𝒐𝒐𝒓
-⭐⭐ - 𝑭𝒂𝒊𝒓
-⭐⭐⭐ - 𝑮𝒐𝒐𝒅
-⭐⭐⭐⭐ - 𝑽𝒆𝒓𝒚 𝑮𝒐𝒐𝒅
+{e('⭐')} - 𝑷𝒐𝒐𝒓
+{e('⭐⭐')} - 𝑭𝒂𝒊𝒓
+{e('⭐')}{e('⭐')}{e('⭐')} - 𝑮𝒐𝒐𝒅
+{e('⭐')}{e('⭐')}{e('⭐')}{e('⭐')} - 𝑽𝒆𝒓𝒚 𝑮𝒐𝒐𝒅
 ⭐⭐⭐⭐⭐ - 𝑬𝒙𝒄𝒆𝒍𝒍𝒆𝒏𝒕 {e('🎉')}
 
 {separator}
@@ -3358,12 +3391,12 @@ async def show_upgrade_details(query, price):
 {e('📋')} Plan Details:
 
 {e('💰')} Price: {plan['price']}
-⏰ Duration: {plan['duration']}
+{e('⏰')} Duration: {plan['duration']}
 
 {e('⭐')} Included Features:
 {features_text}
 
-💳 To subscribe to this plan:
+{e('💳')} To subscribe to this plan:
 Contact technical support via the Support button in the main menu
 
 {e('⚡')} Upgrade now and unlock premium features!
@@ -3409,7 +3442,7 @@ async def show_settings(query):
 {e('⚠️')} <b>Risk Level:</b> {risk}
 
 <b>Notifications:</b>
-🔔 <b>Signal Alerts:</b> {notifications}
+{e('🔔')} <b>Signal Alerts:</b> {notifications}
 
 {e('👇')} <b>TAP TO CHANGE</b>"""
     keyboard = InlineKeyboardMarkup([
@@ -3734,9 +3767,9 @@ def _build_live_payouts_text(broker_name: str, pairs_with_payouts: list) -> str:
 
 Updated: {datetime.now().strftime('%H:%M:%S')}
 
-🟦 Blue = High payout (85%+)
-🟩 Green = Medium payout (70-84%)
-🟥 Red = Low payout (&lt;70%)"""
+{e('🟦')} Blue = High payout (85%+)
+{e('🟩')} Green = Medium payout (70-84%)
+{e('🟥')} Red = Low payout (&lt;70%)"""
 
 
 def _build_live_payouts_keyboard(broker: str, pairs_with_payouts: list) -> InlineKeyboardMarkup:
@@ -3804,8 +3837,8 @@ async def show_news_signal(query):
 𝑳𝒂𝒕𝒆𝒔𝒕 𝑴𝒂𝒓𝒌𝒆𝒕 𝑵𝒆𝒘𝒔:
 
 {e('📰')} 𝑼𝑺 𝑭𝒆𝒅 𝑹𝒂𝒕𝒆 𝑫𝒆𝒄𝒊𝒔𝒊𝒐𝒏 - 𝑯𝒊𝒈𝒉 𝑰𝒎𝒑𝒂𝒄𝒕
-📰 𝑵𝒐𝒏-𝑭𝒂𝒓𝒎 𝑷𝒂𝒚𝒓𝒐𝒍𝒍𝒔 - 𝑴𝒆𝒅𝒊𝒖𝒎 𝑰𝒎𝒑𝒂𝒄𝒕
-📰 𝑬𝑼 𝑪𝑷𝑰 𝑫𝒂𝒕𝒂 - 𝑴𝒆𝒅𝒊𝒖𝒎 𝑰𝒎𝒑𝒂𝒄𝒕
+{e('📰')} 𝑵𝒐𝒏-𝑭𝒂𝒓𝒎 𝑷𝒂𝒚𝒓𝒐𝒍𝒍𝒔 - 𝑴𝒆𝒅𝒊𝒖𝒎 𝑰𝒎𝒑𝒂𝒄𝒕
+{e('📰')} 𝑬𝑼 𝑪𝑷𝑰 𝑫𝒂𝒕𝒂 - 𝑴𝒆𝒅𝒊𝒖𝒎 𝑰𝒎𝒑𝒂𝒄𝒕
 
 𝑼𝒑𝒅𝒂𝒕𝒆𝒅: {datetime.now().strftime('%H:%M')}
 
@@ -3824,7 +3857,7 @@ async def show_ai_filter(query):
 • 𝑴𝒂𝒙𝒊𝒎𝒖𝒎 𝑹𝒊𝒔𝒌: 𝑴𝒆𝒅𝒊𝒖𝒎
 • 𝑷𝒓𝒆𝒇𝒆𝒓𝒓𝒆𝒅 𝑷𝒂𝒊𝒓𝒔: 𝑴𝒂𝒋𝒐𝒓
 
-𝑨𝑰 𝑺𝒕𝒂𝒕𝒖𝒔: 𝑨𝒄𝒕𝒊𝒗𝒆 ✅
+𝑨𝑰 𝑺𝒕𝒂𝒕𝒖𝒔: 𝑨𝒄𝒕𝒊𝒗𝒆 {e('✅')}
 𝑳𝒂𝒔𝒕 𝑨𝒏𝒂𝒍𝒚𝒔𝒊𝒔: {datetime.now().strftime('%H:%M:%S')}
 
 {e('⚡')} 𝑨𝑰 𝒊𝒔 𝒂𝒏𝒂𝒍𝒚𝒛𝒊𝒏𝒈 𝒎𝒂𝒓𝒌𝒆𝒕𝒔 24/7
@@ -3932,7 +3965,7 @@ signal times to your local time."""
 
 ━━━━━━━━━━━━━━━━━━━━
 
-👇 𝑺𝒆𝒍𝒆𝒄𝒕 𝒚𝒐𝒖𝒓 𝒕𝒊𝒎𝒆𝒛𝒐𝒏𝒆:"""
+{e('👇')} 𝑺𝒆𝒍𝒆𝒄𝒕 𝒚𝒐𝒖𝒓 𝒕𝒊𝒎𝒆𝒛𝒐𝒏𝒆:"""
 
     # All UTC offsets
     offsets = [
@@ -4105,7 +4138,7 @@ async def receive_signal_input(update: Update, context: ContextTypes.DEFAULT_TYP
 {e('📊')} Currency: {currency}
 {e('📈')} Direction: {direction}
 {e('💰')} Entry: {price}
-⏰ Expiry: {expiry}
+{e('⏰')} Expiry: {expiry}
 
 Do you want to send it to the signals channel?
 """
@@ -4126,9 +4159,9 @@ async def admin_confirm_send(query, context):
 {e('📈')} Currency: {signal['currency']}
 {e('📉')} Direction: {signal['direction']}
 {e('💰')} Entry Price: {signal['price']}
-⏰ Expiry: {signal['expiry']}
+{e('⏰')} Expiry: {signal['expiry']}
 
-🕐 Signal Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+{e('🕐')} Signal Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 {e('⚠️')} Trade responsibly - Signals are advisory only
 """
@@ -4199,7 +4232,7 @@ async def admin_stats(query):
 • Losing signals: {losses}
 • Win rate: {win_rate:.1f}%
 
-📅 Last Updates:
+{e('📅')} Last Updates:
 • Last update date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 """
     await safe_edit_message(query, text, reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
