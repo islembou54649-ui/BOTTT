@@ -568,6 +568,9 @@ def get_main_menu_keyboard():
         ],
         [
             InlineKeyboardButton("Swap C/P", callback_data="swap_cp", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swap"]),
+            InlineKeyboardButton("Formatter", callback_data="formatter", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swirl"]),
+        ],
+        [
             InlineKeyboardButton("Plans", url=WEBAPP_PLANS_URL, style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["diamond"]),
         ],
         # === Plans & Upgrade ===
@@ -702,7 +705,7 @@ def get_upgrade_keyboard():
 # ============================================================
 # 4) HANDLERS
 # ============================================================
-WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK, WAITING_LIVE_CHK, WAITING_BLK_CHK, WAITING_AXTIRON_CHK, WAITING_PROMO = range(13)
+WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK, WAITING_LIVE_CHK, WAITING_BLK_CHK, WAITING_AXTIRON_CHK, WAITING_PROMO, WAITING_FORMATTER_SIGNAL, WAITING_FORMATTER_CHOICE = range(15)
 
 async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
@@ -1106,7 +1109,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "ai_assistant":
         await show_ai_assistant(query)
     elif data == "formatter":
-        await show_formatter(query)
+        await show_formatter_input(update, context)
+    elif data == "fmt_new":
+        await show_formatter_input(update, context)
+    elif data == "fmt_change":
+        # Show format choice list again using stored signals
+        await show_formatter_change_format(update, context)
+    elif data.startswith("fmt_choice_"):
+        # Format choice from inline buttons
+        fmt_id = data.replace("fmt_choice_", "")
+        await show_formatter_result_from_button(update, context, fmt_id)
     elif data == "market_filters":
         await show_market_filters_broker(query)
     elif data == "mf_quotex":
@@ -5002,21 +5014,338 @@ async def show_ai_assistant(query):
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
+# ============================================================
+# FORMATTER - signal list -> choose format -> show converted list
+# ============================================================
+
+# Format definitions: id -> (label, sample, builder)
+# builder(signal_dict) -> formatted string for one line
+# signal_dict keys: timeframe, pair, time, direction
+FORMATTER_FORMATS = [
+    (
+        "std_call",
+        "Standard (CALL/PUT)",
+        "M1;EURUSD-OTC;14:26;CALL",
+        lambda s: f"{s['timeframe']};{s['pair']};{s['time']};{'CALL' if s['direction_upper'] in ('CALL','BUY','UP') else 'PUT'}",
+    ),
+    (
+        "std_buy",
+        "Standard (BUY/SELL)",
+        "M1;EURUSD-OTC;14:26;BUY",
+        lambda s: f"{s['timeframe']};{s['pair']};{s['time']};{'BUY' if s['direction_upper'] in ('CALL','BUY','UP') else 'SELL'}",
+    ),
+    (
+        "arrow",
+        "Arrow Format",
+        "❒ USDCOP_otc 1M - 00:12 PUT",
+        lambda s: f"❒ {s['pair'].lower().replace('-','_')} {s['timeframe_rev']} - {s['time']} {'PUT' if s['direction_upper'] in ('PUT','SELL','DOWN') else 'CALL'}",
+    ),
+    (
+        "dash",
+        "Dash Format",
+        "EURUSD-OTC | 1M | 14:26 | CALL",
+        lambda s: f"{s['pair']} | {s['timeframe_rev']} | {s['time']} | {'CALL' if s['direction_upper'] in ('CALL','BUY','UP') else 'PUT'}",
+    ),
+    (
+        "emoji",
+        "Emoji Format",
+        "🟢 EURUSD-OTC • 1M • 14:26 • CALL",
+        lambda s: f"{'🟢' if s['direction_upper'] in ('CALL','BUY','UP') else '🔴'} {s['pair']} • {s['timeframe_rev']} • {s['time']} • {'CALL' if s['direction_upper'] in ('CALL','BUY','UP') else 'PUT'}",
+    ),
+    (
+        "premium",
+        "Premium Format",
+        "⏱ 14:26 | 🌐 EURUSD-OTC | ⏳ 1M | 📈 CALL",
+        lambda s: f"⏱ {s['time']} | 🌐 {s['pair']} | ⏳ {s['timeframe_rev']} | {'📈 CALL' if s['direction_upper'] in ('CALL','BUY','UP') else '📉 PUT'}",
+    ),
+    (
+        "compact",
+        "Compact Format",
+        "EURUSD-OTC 1M 14:26 CALL",
+        lambda s: f"{s['pair']} {s['timeframe_rev']} {s['time']} {'CALL' if s['direction_upper'] in ('CALL','BUY','UP') else 'PUT'}",
+    ),
+    (
+        "bracket",
+        "Bracket Format",
+        "[1M] EURUSD-OTC @ 14:26 (CALL)",
+        lambda s: f"[{s['timeframe_rev']}] {s['pair']} @ {s['time']} ({'CALL' if s['direction_upper'] in ('CALL','BUY','UP') else 'PUT'})",
+    ),
+]
+
+
+def _parse_signal_line(line):
+    """Parse a signal line into a dict with: timeframe, pair, time, direction.
+    Returns None if line can't be parsed.
+    Supports multiple input formats.
+    """
+    import re as _re
+    line = line.strip()
+    if not line:
+        return None
+
+    # Try to extract time (HH:MM) - must be standalone, not part of timeframe
+    time_match = _re.search(r'(?<!\d)(\d{1,2}:\d{2})(?!\d)', line)
+    if not time_match:
+        return None
+    time = time_match.group(1)
+
+    # Try to extract direction
+    direction = None
+    for d in ['CALL', 'PUT', 'BUY', 'SELL', 'UP', 'DOWN']:
+        if _re.search(r'\b' + d + r'\b', line, _re.IGNORECASE):
+            direction = d.upper()
+            break
+    if not direction:
+        return None
+
+    # Try to extract timeframe (M1, 1M, M5, 5M, etc.)
+    # Use strict patterns to avoid matching times like 14:26
+    timeframe = None
+    # Pattern 1: 1M, 5M, 15M (number+M, but not preceded/followed by digit)
+    m1 = _re.search(r'(?<!\d)(\d{1,2}M)(?!\d)', line, _re.IGNORECASE)
+    # Pattern 2: M1, M5, M15 (M+number, but not in the middle of a word)
+    m2 = _re.search(r'\b(M\d{1,2})\b', line, _re.IGNORECASE)
+    if m1:
+        tf_raw = m1.group(1).upper()
+        timeframe = 'M' + tf_raw[:-1]
+    elif m2:
+        tf_raw = m2.group(1).upper()
+        timeframe = tf_raw
+    if not timeframe:
+        timeframe = 'M1'  # default
+
+    # Try to extract pair (anything that looks like a currency pair)
+    # Remove the time, direction, timeframe from the line, then clean
+    cleaned = line
+    cleaned = _re.sub(r'\d{1,2}:\d{2}', ' ', cleaned)
+    cleaned = _re.sub(r'\b(CALL|PUT|BUY|SELL|UP|DOWN)\b', ' ', cleaned, flags=_re.IGNORECASE)
+    cleaned = _re.sub(r'(?<!\d)\d{1,2}M(?!\d)', ' ', cleaned, flags=_re.IGNORECASE)
+    cleaned = _re.sub(r'\bM\d{1,2}\b', ' ', cleaned, flags=_re.IGNORECASE)
+    # Remove separators and decorations
+    cleaned = _re.sub(r'[;|•\-\(\)\[\]❒🟢🔴⏱🌐⏳📈📉@\s_]+', ' ', cleaned)
+    cleaned = cleaned.strip()
+    # Get the first token that contains letters (the pair)
+    tokens = [t for t in cleaned.split() if any(c.isalpha() for c in t)]
+    if not tokens:
+        return None
+    pair = tokens[0].upper()
+
+    # Normalize pair: ensure -OTC suffix preserved if present
+    has_otc = 'OTC' in line.upper() or 'otc' in line.lower()
+    if pair.endswith('OTC') and not pair.endswith('-OTC'):
+        pair = pair[:-3] + '-OTC'
+    elif has_otc and not pair.endswith('-OTC') and not pair.endswith('OTC'):
+        pair = pair + '-OTC'
+
+    # Reverse timeframe for some formats (M1 -> 1M)
+    tf_rev = timeframe[1:] + 'M' if _re.match(r'^M\d+$', timeframe) else timeframe
+
+    return {
+        'timeframe': timeframe,
+        'timeframe_rev': tf_rev,
+        'pair': pair,
+        'time': time,
+        'direction': direction,
+        'direction_upper': direction.upper(),
+    }
+
+
+async def show_formatter_input(update, context):
+    """Ask user to send signal list for formatting."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    text = f"""{e('🌀')} {to_bold_italic('FORMATTER')}
+
+👇 {to_bold('SEND YOUR SIGNAL LIST')}
+
+Send your signal list to format it.
+You can use any format, examples:
+
+{to_bold('Format 1:')} M1;EURUSD-OTC;14:26;CALL
+{to_bold('Format 2:')} EURUSD OTC 14:26 CALL M1
+{to_bold('Format 3:')} ❒ USDCOP_otc 1M - 00:12 PUT
+{to_bold('Format 4:')} EUR/USD 14:26 BUY
+
+Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_FORMATTER_SIGNAL
+
+
+async def receive_formatter_signal_list(update, context):
+    """Receive signal list, store it, show format choices."""
+    text = update.message.text.strip()
+    lines = [l for l in text.split('\n') if l.strip()]
+
+    # Parse each line
+    parsed = []
+    failed = 0
+    for line in lines:
+        sig = _parse_signal_line(line)
+        if sig:
+            parsed.append(sig)
+        else:
+            failed += 1
+
+    if not parsed:
+        await update.message.reply_text(
+            f"{e('❌')} {to_bold('No valid signals found!')}\n\n"
+            f"Send signals like:\n"
+            f"M1;EURUSD-OTC;14:26;CALL\n\n"
+            f"Send /cancel to cancel",
+            parse_mode=ParseMode.HTML
+        )
+        return WAITING_FORMATTER_SIGNAL
+
+    # Store parsed signals in user_data
+    context.user_data["formatter_signals"] = parsed
+    context.user_data["formatter_failed"] = failed
+
+    num_signals = len(parsed)
+    text = f"""{e('✅')} {to_bold_italic('FORMATTER')}
+
+{to_bold(str(num_signals))} {to_bold('signals received')}
+
+👇 {to_bold('CHOOSE OUTPUT FORMAT')}"""
+    keyboard_rows = []
+    for fmt_id, fmt_label, fmt_sample, _ in FORMATTER_FORMATS:
+        keyboard_rows.append([InlineKeyboardButton(
+            f"{fmt_label}",
+            callback_data=f"fmt_choice_{fmt_id}",
+            style=STYLE_BLUE,
+            icon_custom_emoji_id=EMOJI_IDS["swirl"],
+        )])
+    keyboard_rows.append([InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return ConversationHandler.END
+
+
+async def show_formatter_result_from_button(update, context, fmt_id):
+    """Show formatted result based on chosen format."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+
+    parsed = context.user_data.get("formatter_signals", [])
+    if not parsed:
+        text = f"""{e('⚠️')} {to_bold_italic('FORMATTER')}
+
+{e('❌')} {to_bold('NO SIGNALS FOUND')}
+
+Please send your signal list first."""
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Send Signals", callback_data="formatter", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["swirl"])],
+            [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+        ])
+        await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+        return
+
+    # Find the chosen format
+    chosen = None
+    for f_id, f_label, f_sample, f_builder in FORMATTER_FORMATS:
+        if f_id == fmt_id:
+            chosen = (f_id, f_label, f_sample, f_builder)
+            break
+
+    if not chosen:
+        text = f"""{e('❌')} {to_bold('Invalid format choice')}"""
+        await safe_edit_message(query, text, parse_mode=ParseMode.HTML)
+        return
+
+    fmt_id, fmt_label, fmt_sample, fmt_builder = chosen
+
+    # Build formatted output
+    formatted_lines = []
+    for sig in parsed:
+        try:
+            formatted_lines.append(fmt_builder(sig))
+        except Exception:
+            formatted_lines.append(f"{sig['pair']} {sig['time']} {sig['direction']}")
+
+    formatted_text = "\n".join(formatted_lines)
+    num_signals = len(parsed)
+
+    text = f"""{e('🌀')} {to_bold_italic('FORMATTER - RESULT')}
+
+{e('📋')} {to_bold('FORMAT')}: {to_bold(fmt_label)}
+{e('📌')} {to_bold('SAMPLE')}: {to_bold(fmt_sample)}
+{e('🔢')} {to_bold('COUNT')}: {to_bold(str(num_signals))}
+
+━━━━━━━ • ━━━━━━━
+{to_bold_italic('FORMATTED SIGNALS:')}
+━━━━━━━ • ━━━━━━━
+
+{formatted_text}
+
+━━━━━━━ • ━━━━━━━
+
+{e('💡')} {to_bold('Copy the formatted signals above')}"""
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("New Signals", callback_data="fmt_new", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["sparkles"]),
+            InlineKeyboardButton("Change Format", callback_data="fmt_change", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swap"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_formatter_change_format(update, context):
+    """Show format choice list again using stored signals."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+
+    parsed = context.user_data.get("formatter_signals", [])
+    if not parsed:
+        # No signals stored, send new
+        await show_formatter_input(update, context)
+        return
+
+    num_signals = len(parsed)
+    text = f"""{e('✅')} {to_bold_italic('FORMATTER')}
+
+{to_bold(str(num_signals))} {to_bold('signals stored')}
+
+👇 {to_bold('CHOOSE OUTPUT FORMAT')}"""
+    keyboard_rows = []
+    for fmt_id, fmt_label, fmt_sample, _ in FORMATTER_FORMATS:
+        keyboard_rows.append([InlineKeyboardButton(
+            f"{fmt_label}",
+            callback_data=f"fmt_choice_{fmt_id}",
+            style=STYLE_BLUE,
+            icon_custom_emoji_id=EMOJI_IDS["swirl"],
+        )])
+    keyboard_rows.append([InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
 async def show_formatter(query):
-    text = f"""
-{e('🌀')} 𝑭𝑶𝑹𝑴𝑨𝑻𝑻𝑬𝑹
+    """Legacy - redirect to input."""
+    query_dummy = query
+    # Show input prompt directly (legacy fallback)
+    text = f"""{e('🌀')} {to_bold_italic('FORMATTER')}
 
-𝑺𝒊𝒈𝒏𝒂𝒍 𝑭𝒐𝒓𝒎𝒂𝒕𝒕𝒆𝒓:
+👇 {to_bold('SEND YOUR SIGNAL LIST')}
 
-𝑭𝒐𝒓𝒎𝒂𝒕 𝒚𝒐𝒖𝒓 𝒔𝒊𝒈𝒏𝒂𝒍𝒔:
-• 𝑺𝒕𝒂𝒏𝒅𝒂𝒓𝒅 𝒇𝒐𝒓𝒎𝒂𝒕
-• 𝑪𝒖𝒔𝒕𝒐𝒎 𝒇𝒐𝒓𝒎𝒂𝒕
-• 𝑷𝒓𝒆𝒎𝒊𝒖𝒎 𝒇𝒐𝒓𝒎𝒂𝒕
+Send your signal list to format it.
+Examples:
+• M1;EURUSD-OTC;14:26;CALL
+• ❒ USDCOP_otc 1M - 00:12 PUT
 
-𝑺𝒆𝒏𝒅 𝒚𝒐𝒖𝒓 𝒔𝒊𝒈𝒏𝒂𝒍 𝒕𝒐 𝒇𝒐𝒓𝒎𝒂𝒕 𝒊𝒕.
-
-{e('⚡')} 𝑸𝒖𝒊𝒄𝒌 𝒂𝒏𝒅 𝒆𝒂𝒔𝒚 𝒇𝒐𝒓𝒎𝒂𝒕𝒕𝒊𝒏𝒈
-"""
+Send /cancel to cancel"""
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 # ============================================================
@@ -5621,6 +5950,18 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     application.add_handler(promo_code_conversation)
+
+    formatter_conversation = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(show_formatter_input, pattern="^formatter$"),
+            CallbackQueryHandler(show_formatter_input, pattern="^fmt_new$"),
+        ],
+        states={
+            WAITING_FORMATTER_SIGNAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_formatter_signal_list)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    application.add_handler(formatter_conversation)
 
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
