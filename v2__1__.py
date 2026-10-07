@@ -1033,7 +1033,7 @@ async def show_plan_details(query, plan_key):
     plan = plans_map.get(plan_key, PLANS[0])
     features_text = "\n".join([f"{e('✅')} {f}" for f in plan["features"]])
     text = f"""
-📋 Plan Details
+{e('📋')} Plan Details
 
 Name: {plan['name']}
 Price: {plan['price']}
@@ -1053,7 +1053,7 @@ async def show_request_signals(query):
 
 {e('🤖')} Select the platform you want signals from:
 
-🟢 QUOTEX
+{e('🟢')} QUOTEX
   Best for binary options (OTC available)
 
 🔵 BINOLLA
@@ -1070,7 +1070,7 @@ async def show_bot_signals(query, platform):
         "binolla": {"name": "BINOLLA Signals", "emoji_id": EMOJI_IDS["chart"], "pairs": [("AUD/CAD", "PUT", "0.9124", "M5", "88%"), ("EUR/GBP", "CALL", "0.8541", "M1", "92%"), ("USD/CHF", "PUT", "0.8923", "M5", "90%")]},
     }
     platform_info = platforms_info.get(platform, platforms_info["quotex"])
-    signals_text = "\n\n".join([f"📊 {p[0]}\nDirection: {p[1]}\nEntry: {p[2]}\nExpiry: {p[3]}\nConfidence: {p[4]}" for p in platform_info["pairs"]])
+    signals_text = "\n\n".join([f"{e('📊')} {p[0]}\nDirection: {p[1]}\nEntry: {p[2]}\nExpiry: {p[3]}\nConfidence: {p[4]}" for p in platform_info["pairs"]])
     text = f"""
 {e('🤖')} {platform_info['name']}
 
@@ -1090,7 +1090,7 @@ async def show_bot_signals(query, platform):
 
 async def show_current_signals(query):
     signals = [("EUR/USD", "CALL", "1.0856", "M1", "92%"), ("GBP/JPY", "PUT", "189.42", "M5", "88%"), ("USD/JPY", "CALL", "149.78", "M1", "95%")]
-    signals_text = "\n\n".join([f"📊 {s[0]}\nDirection: {s[1]}\nEntry: {s[2]}\nExpiry: {s[3]}\nExpected Rate: {s[4]}" for s in signals])
+    signals_text = "\n\n".join([f"{e('📊')} {s[0]}\nDirection: {s[1]}\nEntry: {s[2]}\nExpiry: {s[3]}\nExpected Rate: {s[4]}" for s in signals])
     text = f"""
 {e('📈')} Live Current Signals
 
@@ -1123,19 +1123,19 @@ async def show_time_list(query):
         pass
 
     if scheduled_time and scheduled_time.get("start_time"):
-        status = "✅ Active" if scheduled_time.get("enabled") else "⏸️ Paused"
+        status = "{e('✅')} Active" if scheduled_time.get("enabled") else "{e('⏸️')} Paused"
         schedule_text = f"""{e('✅')} 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒕𝒂𝒕𝒖𝒔: {status}
 
 {e('⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {scheduled_time['start_time']}
 {e('⏰')} 𝑬𝒏𝒅 𝑻𝒊𝒎𝒆: {scheduled_time.get('end_time', 'Not set')}
 
-💡 The bot will automatically send you signals during this time period."""
+{e('💡')} The bot will automatically send you signals during this time period."""
     else:
         schedule_text = f"""{e('⚠️')} 𝑵𝒐 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆 𝑺𝒆𝒕
 
 You haven't set a signal schedule yet.
 
-👇 Choose a time slot below to start receiving signals automatically:"""
+{e('👇')} Choose a time slot below to start receiving signals automatically:"""
 
     text = f"""{e('⏰')} 𝑺𝑰𝑮𝑵𝑨𝑳 𝑺𝑪𝑯𝑬𝑫𝑼𝑳𝑬
 
@@ -1237,7 +1237,7 @@ async def show_signal_session_broker(query):
     """Show broker selection page."""
     text = f"""{e('⏰')} 𝚂𝙸𝙶𝙽𝙰𝙻 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
 
-👇 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
+{e('👇')} 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
 
 Select your broker to start the signal session."""
     keyboard = InlineKeyboardMarkup([
@@ -1265,7 +1265,7 @@ async def show_signal_session_pairs(query, broker: str, page: int):
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
     text = f"""{e('⏰')} 𝚂𝙸𝙶𝙽𝙰𝙻 𝚂𝙴𝚂𝚂𝙸𝙾𝙽 - {broker_name}
 
-👇 𝚂𝙴𝙻𝙴𝙲𝚃 𝙲𝚄𝚁𝚁𝙴𝙽𝙲𝚈 𝙿𝙰𝙸𝚁𝚂
+{e('👇')} 𝚂𝙴𝙻𝙴𝙲𝚃 𝙲𝚄𝚁𝚁𝙴𝙽𝙲𝚈 𝙿𝙰𝙸𝚁𝚂
 
 Page {page + 1}/{total_pages} · Selected: {len(selected_pairs)} pairs
 
@@ -1280,7 +1280,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected_pairs)} pairs
         is_selected = str(global_idx) in selected_pairs
         # Only ONE checkmark in text, no icon emoji when selected
         if is_selected:
-            label = f"✅{pair_name} {payout}%"
+            label = f"{e('✅')}{pair_name} {payout}%"
             style = STYLE_GREEN
             icon_id = None  # No icon - only text checkmark
         else:
@@ -1408,7 +1408,7 @@ async def show_signal_session_mtg(query, user_id):
 
 Selected pairs: {selected_count}
 
-👇 𝙲𝙷𝙾𝙾𝚂𝙴 𝙼𝚃𝙶 𝙻𝙴𝚅𝙴𝙻"""
+{e('👇')} 𝙲𝙷𝙾𝙾𝚂𝙴 𝙼𝚃𝙶 𝙻𝙴𝚅𝙴𝙻"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("MTG1", callback_data="signal_session_mtg1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -1427,7 +1427,7 @@ async def show_signal_session_duration(query, user_id, mtg_level):
 
 MTG Level: MTG{mtg_level}
 
-👇 𝙲𝙷𝙾𝙾𝚂𝙴 𝙳𝚄𝚁𝙰𝚃𝙸𝙾𝙽"""
+{e('👇')} 𝙲𝙷𝙾𝙾𝚂𝙴 𝙳𝚄𝚁𝙰𝚃𝙸𝙾𝙽"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("1M", callback_data=f"signal_session_duration_1M_{mtg_level}", style=STYLE_BLUE),
@@ -1514,7 +1514,7 @@ async def show_time_session(query):
     if sessions:
         sessions_text = ""
         for i, s in enumerate(sessions, 1):
-            status = "✅" if s["enabled"] else "⏸️"
+            status = "{e('✅')}" if s["enabled"] else "{e('⏸️')}"
             sessions_text += f"\n{i}. {status} {s['start_time']} - {s['end_time']}"
         schedule_text = f"""{e('✅')} 𝒀𝒐𝒖𝒓 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆𝒅 𝑺𝒆𝒔𝒔𝒊𝒐𝒏𝒔:
 {sessions_text}"""
@@ -1523,9 +1523,9 @@ async def show_time_session(query):
 
 𝚈𝚘𝚞 𝚍𝚘𝚗'𝚝 𝚑𝚊𝚟𝚎 𝚊𝚗𝚢 𝚜𝚌𝚑𝚎𝚍𝚞𝚕𝚎𝚍 𝚜𝚎𝚜𝚜𝚒𝚘𝚗𝚜 𝚊𝚝 𝚝𝚑𝚎 𝚖𝚘𝚖𝚎𝚗𝚝.
 
-➕ 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
+{e('➕')} 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
 
-👇 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝚁𝙴𝙰𝚃𝙴 𝙰 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴."""
+{e('👇')} 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝚁𝙴𝙰𝚃𝙴 𝙰 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴."""
 
     text = f"""{e('⏰')} 𝚃𝙸𝙼𝙴 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
 
@@ -1554,7 +1554,7 @@ async def start_new_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
     text = f"""{e('⏰')} 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
 
-👇 𝙿𝙻𝙴𝙰𝚂𝙴 𝚂𝙴𝙽𝙳 𝚃𝙷𝙴 𝚂𝚃𝙰𝚁𝚃 𝚃𝙸𝙼𝙴
+{e('👇')} 𝙿𝙻𝙴𝙰𝚂𝙴 𝚂𝙴𝙽𝙳 𝚃𝙷𝙴 𝚂𝚃𝙰𝚁𝚃 𝚃𝙸𝙼𝙴
 
 𝙵𝚘𝚛𝚖𝚊𝚝: 𝙷𝙷:𝙼𝙼 (𝚎.𝚐. 09:00)
 
@@ -1615,7 +1615,7 @@ async def receive_session_end(update: Update, context: ContextTypes.DEFAULT_TYPE
 {e('⏰')} 𝚂𝚃𝙰𝚁𝚃: {start_time}
 {e('⏰')} 𝙴𝙽𝙳:   {end_time}
 
-👇 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼"""
+{e('👇')} 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("💾 Save Schedule", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
         [InlineKeyboardButton("Back to Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
@@ -1653,7 +1653,7 @@ async def save_session(query, context):
 {e('⏰')} Start: {start_time}
 {e('⏰')} End: {end_time}
 
-💡 The bot will send you trading signals
+{e('💡')} The bot will send you trading signals
 during this time period every day."""
     await safe_edit_message(query, text, reply_markup=get_main_menu_keyboard(), parse_mode=ParseMode.HTML)
 
@@ -1664,7 +1664,7 @@ async def show_live_future(query):
 
 𝚁𝚎𝚚𝚞𝚎𝚜𝚝 𝚝𝚘 𝚟𝚎𝚛𝚒𝚏𝚢 𝚏𝚞𝚝𝚞𝚛𝚎 𝚜𝚒𝚐𝚗𝚊𝚕𝚜 𝚛𝚎𝚜𝚞𝚕𝚝𝚜.
 
-👇 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙷𝙴𝙲𝙺:"""
+{e('👇')} 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙷𝙴𝙲𝙺:"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("📊 Check Results", callback_data="future_results", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
@@ -1699,11 +1699,11 @@ async def start_otc_time_input(update, context, broker):
     except Exception:
         pass
     context.user_data["otc_broker"] = broker
-    text = f"""📈 <b>OTC MARKET FS</b>
+    text = f"""{e('📈')} <b>OTC MARKET FS</b>
 
 Broker: {"QUOTEX" if broker == "quotex" else "BINOLLA"}
 
-👇 <b>SEND START TIME</b>
+{e('👇')} <b>SEND START TIME</b>
 
 Format: HH:MM (e.g. 09:10)
 
@@ -1731,8 +1731,8 @@ async def receive_otc_start_time(update, context):
 
     context.user_data["otc_start_time"] = text
     await update.message.reply_text(
-        f"✅ Start time: {text}\n\n"
-        f"👇 <b>SEND END TIME</b>\n\n"
+        f"{e('✅')} Start time: {text}\n\n"
+        f"{e('👇')} <b>SEND END TIME</b>\n\n"
         f"Format: HH:MM (e.g. 23:59)\n\n"
         f"Send /cancel to cancel",
         parse_mode=ParseMode.HTML
@@ -1801,7 +1801,7 @@ async def _send_otc_pairs_message(update, context, broker, page):
     start_time = context.user_data.get("otc_start_time", "")
     end_time = context.user_data.get("otc_end_time", "")
 
-    text = f"""📈 <b>OTC MARKET FS - {broker_name}</b>
+    text = f"""{e('📈')} <b>OTC MARKET FS - {broker_name}</b>
 
 Time: {start_time} - {end_time}
 
@@ -1814,7 +1814,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"✅{pair_name} {payout}%"
+            label = f"{e('✅')}{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -1828,9 +1828,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -1858,18 +1858,18 @@ async def show_otc_pairs(query, broker, page):
     page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
 
-    text = f"""📈 <b>OTC MARKET FS - {broker_name}</b>
+    text = f"""{e('📈')} <b>OTC MARKET FS - {broker_name}</b>
 
 Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
-👇 <b>SELECT CURRENCY PAIRS</b>"""
+{e('👇')} <b>SELECT CURRENCY PAIRS</b>"""
     keyboard_rows = []
     row = []
     for i, (pair_name, payout) in enumerate(page_pairs):
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"✅{pair_name} {payout}%"
+            label = f"{e('✅')}{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -1883,9 +1883,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -1958,11 +1958,11 @@ async def show_otc_mtg(query, user_id):
     direction = query.message.text or ""
     dir_name = "BOTH" if "BOTH" in direction else ("CALL" if "CALL" in direction else "PUT")
 
-    text = f"""📈 <b>OTC MARKET FS</b>
+    text = f"""{e('📈')} <b>OTC MARKET FS</b>
 
 Direction: {dir_name}
 
-👇 <b>CHOOSE MTG</b>"""
+{e('👇')} <b>CHOOSE MTG</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("MTG1", callback_data="otc_mtg_mtg1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -1994,12 +1994,12 @@ async def show_otc_analysis_ready(query, user_id):
     msg_text = query.message.text or ""
     mtg_name = "MTG1 + MTG2" if "both" in msg_text.lower() else ("MTG1" if "mtg1" in msg_text.lower() else "MTG2")
 
-    text = f"""📈 <b>OTC MARKET FS - READY</b>
+    text = f"""{e('📈')} <b>OTC MARKET FS - READY</b>
 
-🌐 <b>Timezone:</b> UTC {user_tz}
-⚙️ <b>MTG:</b> {mtg_name}
+{e('🌐')} <b>Timezone:</b> UTC {user_tz}
+{e('⚙️')} <b>MTG:</b> {mtg_name}
 
-👇 <b>PRESS TO START ANALYSIS</b>"""
+{e('👇')} <b>PRESS TO START ANALYSIS</b>"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🟢 Start Analysis", callback_data="otc_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
         [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
@@ -2060,7 +2060,7 @@ Please wait..."""
 
 {e('⚡')} <b>ANALYSIS IN PROGRESS</b>
 
-⏳ 01:00 remaining...
+{e('⏳')} 01:00 remaining...
 
 The bot is analyzing the market
 and generating signals."""
@@ -2082,7 +2082,7 @@ and generating signals."""
 
 {e('⚡')} <b>ANALYSIS IN PROGRESS</b>
 
-⏳ {time_str} remaining...
+{e('⏳')} {time_str} remaining...
 
 The bot is analyzing the market
 and generating signals."""
@@ -2151,9 +2151,9 @@ and generating signals."""
 
 async def show_blackout_broker(query):
     """Show broker selection for Blackout FS."""
-    text = f"""🚀 <b>BLACKOUT FS</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS</b>
 
-👇 <b>CHOOSE BROKER</b>"""
+{e('👇')} <b>CHOOSE BROKER</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("QUOTEX", callback_data="blackout_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -2172,11 +2172,11 @@ async def start_blackout_time_input(update, context, broker):
     except Exception:
         pass
     context.user_data["blackout_broker"] = broker
-    text = f"""🚀 <b>BLACKOUT FS</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS</b>
 
 Broker: {"QUOTEX" if broker == "quotex" else "BINOLLA"}
 
-👇 <b>SEND START TIME</b>
+{e('👇')} <b>SEND START TIME</b>
 
 Format: HH:MM (e.g. 09:10)
 
@@ -2204,8 +2204,8 @@ async def receive_blackout_start_time(update, context):
 
     context.user_data["blackout_start_time"] = text
     await update.message.reply_text(
-        f"✅ Start time: {text}\n\n"
-        f"👇 <b>SEND END TIME</b>\n\n"
+        f"{e('✅')} Start time: {text}\n\n"
+        f"{e('👇')} <b>SEND END TIME</b>\n\n"
         f"Format: HH:MM (e.g. 23:59)\n\n"
         f"Send /cancel to cancel",
         parse_mode=ParseMode.HTML
@@ -2278,7 +2278,7 @@ async def _send_blackout_pairs_message(update, context, broker, page):
     start_time = context.user_data.get("blackout_start_time", "")
     end_time = context.user_data.get("blackout_end_time", "")
 
-    text = f"""🚀 <b>BLACKOUT FS - {broker_name}</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS - {broker_name}</b>
 
 Time: {start_time} - {end_time}
 
@@ -2291,7 +2291,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"✅{pair_name} {payout}%"
+            label = f"{e('✅')}{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -2305,9 +2305,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2335,18 +2335,18 @@ async def show_blackout_pairs(query, broker, page):
     page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
 
-    text = f"""🚀 <b>BLACKOUT FS - {broker_name}</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS - {broker_name}</b>
 
 Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
-👇 <b>SELECT CURRENCY PAIRS</b>"""
+{e('👇')} <b>SELECT CURRENCY PAIRS</b>"""
     keyboard_rows = []
     row = []
     for i, (pair_name, payout) in enumerate(page_pairs):
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"✅{pair_name} {payout}%"
+            label = f"{e('✅')}{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -2360,9 +2360,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2425,11 +2425,11 @@ async def show_blackout_mtg(query, user_id):
         await query.answer("Please select at least one pair first!", show_alert=True)
         return
 
-    text = f"""🚀 <b>BLACKOUT FS</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS</b>
 
 Selected pairs: {selected_count}
 
-👇 <b>CHOOSE MTG LEVEL</b>"""
+{e('👇')} <b>CHOOSE MTG LEVEL</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("MTG1", callback_data="blackout_mtg1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -2442,11 +2442,11 @@ Selected pairs: {selected_count}
 
 async def show_blackout_duration(query, user_id, mtg_level):
     """Show duration selection for blackout."""
-    text = f"""🚀 <b>BLACKOUT FS</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS</b>
 
 MTG Level: MTG{mtg_level}
 
-👇 <b>CHOOSE DURATION</b>"""
+{e('👇')} <b>CHOOSE DURATION</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("1M", callback_data=f"blackout_dur_1M_{mtg_level}", style=STYLE_BLUE),
@@ -2464,11 +2464,11 @@ MTG Level: MTG{mtg_level}
 
 async def show_blackout_analysis_type(query, user_id, duration, mtg_level):
     """Show analysis type selection (Hybrid / High)."""
-    text = f"""🚀 <b>BLACKOUT FS</b>
+    text = f"""{e('🚀')} <b>BLACKOUT FS</b>
 
 MTG: MTG{mtg_level} · Duration: {duration}
 
-👇 <b>CHOOSE ANALYSIS TYPE</b>"""
+{e('👇')} <b>CHOOSE ANALYSIS TYPE</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Hybrid", callback_data=f"blackout_analysis_hybrid_{duration}_{mtg_level}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -2553,7 +2553,7 @@ async def show_blackout_final(query, user_id, analysis_type, duration, mtg_level
 
 {e('📅')} {to_bold(today)}
 
-{e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)} 🇧🇩
+{e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)} {e('🇧🇩')}
 {e('⚙️')} {to_bold('MODE')}: {to_bold('BLACKOUT FS')}
 {e('⚡')} {to_bold('FILTER')}: MTG {to_bold(str(mtg_level))}
 
@@ -2594,9 +2594,9 @@ async def show_axtiron_broker(query):
 async def show_axtiron_market(query, broker):
     """Show market type selection for Axtiron."""
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
-    text = f"""🐾 <b>AXTIRON FS - {broker_name}</b>
+    text = f"""{e('🐾')} <b>AXTIRON FS - {broker_name}</b>
 
-👇 <b>CHOOSE MARKET TYPE</b>"""
+{e('👇')} <b>CHOOSE MARKET TYPE</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("OTC Market", callback_data=f"axtiron_market_otc_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["chart"]),
@@ -2612,12 +2612,12 @@ async def show_axtiron_analyzing(query, market, broker):
     import asyncio
     market_name = "OTC" if market == "otc" else "Global"
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
-    text = f"""🐾 <b>AXTIRON FS</b>
+    text = f"""{e('🐾')} <b>AXTIRON FS</b>
 
 Broker: {broker_name}
 Market: {market_name}
 
-⏳ <b>ANALYZING MARKET...</b>
+{e('⏳')} <b>ANALYZING MARKET...</b>
 
 Please wait while we scan
 the market for opportunities."""
@@ -2670,18 +2670,18 @@ async def show_axtiron_pairs(query, broker, page):
     page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
 
-    text = f"""🐾 <b>AXTIRON FS - {broker_name}</b>
+    text = f"""{e('🐾')} <b>AXTIRON FS - {broker_name}</b>
 
 Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
-👇 <b>SELECT CURRENCY PAIRS</b>"""
+{e('👇')} <b>SELECT CURRENCY PAIRS</b>"""
     keyboard_rows = []
     row = []
     for i, (pair_name, payout) in enumerate(page_pairs):
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"✅{pair_name} {payout}%"
+            label = f"{e('✅')}{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -2695,9 +2695,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"axtiron_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"axtiron_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"axtiron_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"axtiron_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2823,7 +2823,7 @@ your premium future signals."""
         signals.sort(key=lambda x: x.split()[-2])
         signals_text = "\n".join(signals)
 
-        result_text = f"""🐾 {to_bold_italic('PREMIUM FUTURE BY AXTIRON')} 🐾
+        result_text = f"""{e('🐾')} {to_bold_italic('PREMIUM FUTURE BY AXTIRON')} {e('🐾')}
 
 {e('⚙️')} {to_bold('VERSION 2')} | {to_bold('MODE')}: {to_bold('LUNA')}
 {e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)}
@@ -3017,7 +3017,7 @@ async def show_future_signals_platform(query, platform):
         future_signals = [("EUR/USD OTC", now + timedelta(minutes=15), "CALL", "M1"), ("GBP/JPY OTC", now + timedelta(minutes=30), "PUT", "M5"), ("USD/JPY OTC", now + timedelta(hours=1), "CALL", "M1")]
     else:
         future_signals = [("BTC/USD", now + timedelta(minutes=15), "PUT", "M5"), ("ETH/USD", now + timedelta(minutes=30), "CALL", "M1"), ("Gold/XAU", now + timedelta(hours=1), "CALL", "M5")]
-    signals_text = "\n\n".join([f"📊 {s[0]}\n{e('⏰')} {s[1].strftime('%H:%M')}\nDirection: {s[2]}\nDuration: {s[3]}" for s in future_signals])
+    signals_text = "\n\n".join([f"{e('📊')} {s[0]}\n{e('⏰')} {s[1].strftime('%H:%M')}\nDirection: {s[2]}\nDuration: {s[3]}" for s in future_signals])
     platform_name = "QUOTEX" if platform == "quotex" else "BINOLLA"
     text = f"""
 {e('💎')} {platform_name} - Upcoming Future Signals
@@ -3030,7 +3030,7 @@ async def show_future_signals_platform(query, platform):
 
 async def show_future_results(query):
     text = f"""
-📋 Choose Platform
+{e('📋')} Choose Platform
 
 Select the platform to view results for:
 """
@@ -3038,10 +3038,10 @@ Select the platform to view results for:
 
 async def show_future_results_platform(query, platform):
     if platform == "quotex":
-        results = [("EUR/USD OTC", "CALL", "WIN", "✅", "1.0856 → 1.0862"), ("GBP/JPY OTC", "PUT", "WIN", "✅", "189.42 → 189.18"), ("USD/CAD OTC", "CALL", "LOSS", "❌", "1.3642 → 1.3639"), ("AUD/USD OTC", "PUT", "WIN", "✅", "0.6582 → 0.6571"), ("EUR/GBP OTC", "CALL", "WIN", "✅", "0.8541 → 0.8553")]
+        results = [("EUR/USD OTC", "CALL", "WIN", "{e('✅')}", "1.0856 → 1.0862"), ("GBP/JPY OTC", "PUT", "WIN", "{e('✅')}", "189.42 → 189.18"), ("USD/CAD OTC", "CALL", "LOSS", "{e('❌')}", "1.3642 → 1.3639"), ("AUD/USD OTC", "PUT", "WIN", "{e('✅')}", "0.6582 → 0.6571"), ("EUR/GBP OTC", "CALL", "WIN", "{e('✅')}", "0.8541 → 0.8553")]
     else:
-        results = [("BTC/USD", "CALL", "WIN", "✅", "67250 → 67800"), ("ETH/USD", "PUT", "WIN", "✅", "3450 → 3420"), ("Gold/XAU", "CALL", "LOSS", "❌", "2034 → 2031"), ("Oil/WTI", "PUT", "WIN", "✅", "78.5 → 77.9"), ("Silver/XAG", "CALL", "WIN", "✅", "24.1 → 24.5")]
-    results_text = "\n\n".join([f"📊 {r[0]} | {r[1]}\n{r[3]} Result: {r[2]}\n📈 Movement: {r[4]}" for r in results])
+        results = [("BTC/USD", "CALL", "WIN", "{e('✅')}", "67250 → 67800"), ("ETH/USD", "PUT", "WIN", "{e('✅')}", "3450 → 3420"), ("Gold/XAU", "CALL", "LOSS", "{e('❌')}", "2034 → 2031"), ("Oil/WTI", "PUT", "WIN", "{e('✅')}", "78.5 → 77.9"), ("Silver/XAG", "CALL", "WIN", "{e('✅')}", "24.1 → 24.5")]
+    results_text = "\n\n".join([f"{e('📊')} {r[0]} | {r[1]}\n{r[3]} Result: {r[2]}\n{e('📈')} Movement: {r[4]}" for r in results])
     wins = sum(1 for r in results if r[2] == "WIN")
     total = len(results)
     win_rate = (wins / total * 100) if total > 0 else 0
@@ -3051,7 +3051,7 @@ async def show_future_results_platform(query, platform):
 
 {results_text}
 
-📈 Performance Statistics:
+{e('📈')} Performance Statistics:
 {e('✅')} Winning signals: {wins}
 {e('❌')} Losing signals: {total - wins}
 {e('📊')} Win rate: {win_rate:.0f}%
@@ -3098,7 +3098,7 @@ Your referral link:
     if referrals:
         for ref in referrals[:5]:
             name = ref.get("first_name") or ref.get("username") or "User"
-            joined = f"{e('✅')} Joined" if ref.get("joined_channel") else "⏳ Pending"
+            joined = f"{e('✅')} Joined" if ref.get("joined_channel") else "{e('⏳')} Pending"
             text += f"\n• {name} - {joined}"
     else:
         text += f"\nNo referrals yet. Share your link to get started!"
@@ -3136,16 +3136,16 @@ async def show_my_account(query, user_id):
 
     text = f"""{e('🪪')} <b>MY PROFILE</b>
 
-🆔 <b>ID:</b> <code>{user_id}</code>  👤 <b>Name:</b> <b>{name_fancy}</b>
-📅 <b>Joined:</b> <b>{join_date}</b>
+{e('🆔')} <b>ID:</b> <code>{user_id}</code>  {e('👤')} <b>Name:</b> <b>{name_fancy}</b>
+{e('📅')} <b>Joined:</b> <b>{join_date}</b>
 
-{e('💎')} <b>PLAN:</b> 👑 <b>{plan_name}</b>  {status_emoji} <b>Status:</b> <b>{status}</b>
+{e('💎')} <b>PLAN:</b> {e('👑')} <b>{plan_name}</b>  {status_emoji} <b>Status:</b> <b>{status}</b>
 
 {e('📊')} <b>STATS:</b>  👥 <b>Referrals:</b> {ref_count}  💰 <b>Rewards:</b> {ref_count * 5} pts
 
 🏆 <b>ACHIEVEMENTS:</b>
 ✅ <b>Bot Member</b>
-{'⏳ <b>Not Subscribed</b>' if not is_premium else '✅ <b>VIP Subscriber</b>'}  {'⏳ <b>No Referrals</b>' if ref_count == 0 else '✅ <b>Has Referrals</b>'}"""
+{'{e('⏳')} <b>Not Subscribed</b>' if not is_premium else '{e('✅')} <b>VIP Subscriber</b>'}  {'{e('⏳')} <b>No Referrals</b>' if ref_count == 0 else '{e('✅')} <b>Has Referrals</b>'}"""
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_support(query):
@@ -3154,7 +3154,7 @@ async def show_support(query):
 
 We are here to help you anytime!
 
-📞 Contact Methods:
+{e('📞')} Contact Methods:
 • Direct Support: via "Contact Support" button
 • Support Group: via official channel
 • FAQ: below
@@ -3204,7 +3204,7 @@ async def show_ratings(query):
     separator = "━━━━━━━━━━━━━━━━━━━"
     # Build stars display based on avg rating
     full_stars = int(avg_rating)
-    stars_display = "⭐" * full_stars + "✨" if (avg_rating - full_stars) >= 0.5 else "⭐" * full_stars
+    stars_display = "{e('⭐')}" * full_stars + "{e('✨')}" if (avg_rating - full_stars) >= 0.5 else "{e('⭐')}" * full_stars
 
     text = f"""{e('⭐')} 𝑹𝑨𝑻𝑬 𝑶𝑼𝑹 𝑩𝑶𝑻 {e('⭐')}
 
@@ -3235,7 +3235,7 @@ async def submit_rating(query, stars):
     """Handle the user's rating submission."""
     stars_int = int(stars)
     # Build star display
-    star_display = "⭐" * stars_int
+    star_display = "{e('⭐')}" * stars_int
     # Log the rating
     user_id = query.from_user.id
     user_name = query.from_user.first_name or "User"
@@ -3258,7 +3258,7 @@ async def submit_rating(query, stars):
         2: "Thank you for your feedback. We'll work hard to improve!",
         3: "Thanks for your rating! We're glad you're satisfied.",
         4: "Thank you! We're happy you had a great experience!",
-        5: "Wow, thank you so much for the 5-star rating! We're thrilled! 🎉",
+        5: "Wow, thank you so much for the 5-star rating! We're thrilled! {e('🎉')}",
     }
     msg = thanks_messages.get(stars_int, "Thank you for your rating!")
 
@@ -3346,9 +3346,9 @@ async def show_upgrade_details(query, price):
     text = f"""
 {e('👑')} {plan['name']} - {plan['price']}
 
-📋 Plan Details:
+{e('📋')} Plan Details:
 
-💰 Price: {plan['price']}
+{e('💰')} Price: {plan['price']}
 ⏰ Duration: {plan['duration']}
 
 {e('⭐')} Included Features:
@@ -3395,14 +3395,14 @@ async def show_settings(query):
     text = f"""{e('⚙️')} <b>SETTINGS</b>
 
 <b>Trading Settings:</b>
-📊 <b>Platform:</b> {platform}
-⏱️ <b>Expiry:</b> {expiry}
-⚠️ <b>Risk Level:</b> {risk}
+{e('📊')} <b>Platform:</b> {platform}
+{e('⏱️')} <b>Expiry:</b> {expiry}
+{e('⚠️')} <b>Risk Level:</b> {risk}
 
 <b>Notifications:</b>
 🔔 <b>Signal Alerts:</b> {notifications}
 
-👇 <b>TAP TO CHANGE</b>"""
+{e('👇')} <b>TAP TO CHANGE</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(f"Platform: {platform}", callback_data="settings_platform", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
@@ -3456,7 +3456,7 @@ async def settings_change_platform(query, user_id):
     """Show platform selection."""
     text = f"""{e('⚙️')} <b>SELECT PLATFORM</b>
 
-👇 Choose your default platform:"""
+{e('👇')} Choose your default platform:"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("QUOTEX", callback_data="settings_set_platform_QUOTEX", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -3471,7 +3471,7 @@ async def settings_change_expiry(query, user_id):
     """Show expiry selection."""
     text = f"""{e('⚙️')} <b>SELECT EXPIRY</b>
 
-👇 Choose default expiry time:"""
+{e('👇')} Choose default expiry time:"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("M1", callback_data="settings_set_expiry_M1", style=STYLE_BLUE),
@@ -3490,7 +3490,7 @@ async def settings_change_risk(query, user_id):
     """Show risk level selection."""
     text = f"""{e('⚙️')} <b>SELECT RISK LEVEL</b>
 
-👇 Choose your risk level:"""
+{e('👇')} Choose your risk level:"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("Low", callback_data="settings_set_risk_Low", style=STYLE_GREEN),
@@ -3506,7 +3506,7 @@ async def settings_change_notifications(query, user_id):
     """Show notifications selection."""
     text = f"""{e('⚙️')} <b>NOTIFICATIONS</b>
 
-👇 Choose notification setting:"""
+{e('👇')} Choose notification setting:"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("ON", callback_data="settings_set_notifications_ON", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -3522,7 +3522,7 @@ async def show_checker(query, checker_name):
 
 𝑪𝒉𝒆𝒄𝒌𝒊𝒏𝒈 𝒎𝒂𝒓𝒌𝒆𝒕 𝒔𝒕𝒂𝒕𝒖𝒔...
 
-𝑺𝒕𝒂𝒕𝒖𝒔: 𝑨𝒄𝒕𝒊𝒗𝒆 ✅
+𝑺𝒕𝒂𝒕𝒖𝒔: 𝑨𝒄𝒕𝒊𝒗𝒆 {e('✅')}
 𝑳𝒂𝒔𝒕 𝑼𝒑𝒅𝒂𝒕𝒆: {datetime.now().strftime('%H:%M:%S')}
 
 𝑨𝒗𝒂𝒊𝒍𝒂𝒃𝒍𝒆 𝑷𝒂𝒊𝒓𝒔:
@@ -3572,7 +3572,7 @@ async def show_live_signal(query):
     """Show broker selection for live signal."""
     text = f"""{e('⚡')} <b>LIVE SIGNAL</b>
 
-👇 <b>CHOOSE BROKER</b>"""
+{e('👇')} <b>CHOOSE BROKER</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("QUOTEX", callback_data="live_signal_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
@@ -3588,7 +3588,7 @@ async def show_live_signal_market(query, broker):
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
     text = f"""{e('⚡')} <b>LIVE SIGNAL - {broker_name}</b>
 
-👇 <b>CHOOSE MARKET TYPE</b>"""
+{e('👇')} <b>CHOOSE MARKET TYPE</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("OTC Market", callback_data=f"live_signal_market_otc_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["chart"]),
@@ -3605,7 +3605,7 @@ async def show_live_signal_duration(query, broker, market):
     market_name = "OTC" if market == "otc" else "Global"
     text = f"""{e('⚡')} <b>LIVE SIGNAL - {broker_name} {market_name}</b>
 
-👇 <b>CHOOSE DURATION</b>"""
+{e('👇')} <b>CHOOSE DURATION</b>"""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("1M", callback_data=f"live_signal_dur_1M_{broker}_{market}", style=STYLE_BLUE),
@@ -3629,7 +3629,7 @@ async def show_live_signal_bot_type(query, broker, market, duration):
 
 Duration: {duration}
 
-👇 <b>CHOOSE BOT TYPE</b>"""
+{e('👇')} <b>CHOOSE BOT TYPE</b>"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Strong Bot", callback_data=f"live_signal_bot_strong_{broker}_{market}_{duration}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
         [InlineKeyboardButton("Medium Bot", callback_data=f"live_signal_bot_medium_{broker}_{market}_{duration}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
@@ -3680,7 +3680,7 @@ async def show_live_payouts(query):
     """Show broker selection for live payouts."""
     text = f"""{e('💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂
 
-👇 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
+{e('👇')} 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
 
 Select broker to view live payouts."""
     keyboard = InlineKeyboardMarkup([
@@ -3721,7 +3721,7 @@ def _build_live_payouts_text(broker_name: str, pairs_with_payouts: list) -> str:
     """Build the live payouts message text."""
     return f"""{e('💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂 - {broker_name}
 
-👇 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃 𝚁𝙰𝚃𝙴𝚂
+{e('👇')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃 𝚁𝙰𝚃𝙴𝚂
 
 Updated: {datetime.now().strftime('%H:%M:%S')}
 
@@ -3794,7 +3794,7 @@ async def show_news_signal(query):
 
 𝑳𝒂𝒕𝒆𝒔𝒕 𝑴𝒂𝒓𝒌𝒆𝒕 𝑵𝒆𝒘𝒔:
 
-📰 𝑼𝑺 𝑭𝒆𝒅 𝑹𝒂𝒕𝒆 𝑫𝒆𝒄𝒊𝒔𝒊𝒐𝒏 - 𝑯𝒊𝒈𝒉 𝑰𝒎𝒑𝒂𝒄𝒕
+{e('📰')} 𝑼𝑺 𝑭𝒆𝒅 𝑹𝒂𝒕𝒆 𝑫𝒆𝒄𝒊𝒔𝒊𝒐𝒏 - 𝑯𝒊𝒈𝒉 𝑰𝒎𝒑𝒂𝒄𝒕
 📰 𝑵𝒐𝒏-𝑭𝒂𝒓𝒎 𝑷𝒂𝒚𝒓𝒐𝒍𝒍𝒔 - 𝑴𝒆𝒅𝒊𝒖𝒎 𝑰𝒎𝒑𝒂𝒄𝒕
 📰 𝑬𝑼 𝑪𝑷𝑰 𝑫𝒂𝒕𝒂 - 𝑴𝒆𝒅𝒊𝒖𝒎 𝑰𝒎𝒑𝒂𝒄𝒕
 
@@ -3909,7 +3909,7 @@ async def show_tz_converter(query):
     if user_tz:
         tz_text = f"""{e('✅')} 𝒀𝒐𝒖𝒓 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆: UTC{user_tz}
 
-💡 All signal times will be displayed
+{e('💡')} All signal times will be displayed
 in your selected timezone."""
     else:
         tz_text = f"""{e('⚠️')} 𝑵𝒐 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆 𝑺𝒆𝒕
@@ -3939,11 +3939,11 @@ signal times to your local time."""
     keyboard_rows = []
     row = []
     for offset in offsets:
-        sign = "➖" if offset.startswith("-") else "➕"
+        sign = "{e('➖')}" if offset.startswith("-") else "{e('➕')}"
         label = f"UTC{offset}"
         # Highlight current selection
         if user_tz == offset:
-            label = f"✅ UTC{offset}"
+            label = f"{e('✅')} UTC{offset}"
         row.append(InlineKeyboardButton(label, callback_data=f"set_tz_{offset}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["alarm"]))
         if len(row) == 3:
             keyboard_rows.append(row)
@@ -3973,7 +3973,7 @@ async def set_user_timezone(query, user_id, utc_offset):
 
 {e('⏰')} 𝒀𝒐𝒖𝒓 𝑻𝒊𝒎𝒆𝒛𝒐𝒏𝒆: UTC{utc_offset}
 
-💡 All signal times will now be displayed
+{e('💡')} All signal times will now be displayed
 in your selected timezone (UTC{utc_offset}).
 
 {e('⚡')} You can change your timezone
@@ -4004,7 +4004,7 @@ async def set_user_schedule(query, user_id, start_time, end_time):
 {e('⏰')} 𝑺𝒕𝒂𝒓𝒕 𝑻𝒊𝒎𝒆: {start_time}
 {e('⏰')} 𝑬𝒏𝒅 𝑻𝒊𝒎𝒆: {end_time}
 
-💡 The bot will automatically send you
+{e('💡')} The bot will automatically send you
 trading signals during this time period
 every day.
 
@@ -4044,7 +4044,7 @@ async def delete_user_schedule(query, user_id):
 Your signal schedule has been deleted.
 You will no longer receive automatic signals.
 
-💡 You can set a new schedule anytime
+{e('💡')} You can set a new schedule anytime
 from the Time Schedule menu."""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Schedule", callback_data="time_list", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
@@ -4060,7 +4060,7 @@ async def admin_new_signal(query, context):
         await safe_edit_message(query, f"{e('❌')} Access Denied - Admins only", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return ConversationHandler.END
     text = f"""
-📝 Create New Signal
+{e('📝')} Create New Signal
 
 Send the signal in the following format:
 Currency | Direction | Entry Price | Expiry
@@ -4093,9 +4093,9 @@ async def receive_signal_input(update: Update, context: ContextTypes.DEFAULT_TYP
     text = f"""
 {e('✅')} Signal Ready
 
-📊 Currency: {currency}
-📈 Direction: {direction}
-💰 Entry: {price}
+{e('📊')} Currency: {currency}
+{e('📈')} Direction: {direction}
+{e('💰')} Entry: {price}
 ⏰ Expiry: {expiry}
 
 Do you want to send it to the signals channel?
@@ -4112,11 +4112,11 @@ async def admin_confirm_send(query, context):
         return
 
     signal_text = f"""
-📊 New Signal from the Bot
+{e('📊')} New Signal from the Bot
 
-📈 Currency: {signal['currency']}
-📉 Direction: {signal['direction']}
-💰 Entry Price: {signal['price']}
+{e('📈')} Currency: {signal['currency']}
+{e('📉')} Direction: {signal['direction']}
+{e('💰')} Entry Price: {signal['price']}
 ⏰ Expiry: {signal['expiry']}
 
 🕐 Signal Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -4161,7 +4161,7 @@ async def receive_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             failed += 1
 
-    await status_msg.edit_text(f"{e('✅')} Broadcast completed!\n\n📤 Sent: {sent}\n{e('❌')} Failed: {failed}", reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
+    await status_msg.edit_text(f"{e('✅')} Broadcast completed!\n\n{e('📤')} Sent: {sent}\n{e('❌')} Failed: {failed}", reply_markup=get_control_keyboard(is_admin=True), parse_mode=ParseMode.HTML)
     return ConversationHandler.END
 
 async def admin_stats(query):
@@ -4180,7 +4180,7 @@ async def admin_stats(query):
     text = f"""
 {e('📊')} Bot Statistics
 
-👥 Users:
+{e('👥')} Users:
 • Total Users: {users_count}
 • VIP Subscribers: {premium_count}
 • Total Referrals: {total_referrals}
@@ -4219,7 +4219,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 async def post_init(application):
     me = await application.bot.get_me()
     logger.info("=" * 50)
-    logger.info(f"{e('🤖')} Bot Info:\n   📛 Name: {me.first_name}\n   🔗 Username: @{me.username}\n   🆔 ID: {me.id}")
+    logger.info(f"{e('🤖')} Bot Info:\n   {e('📛')} Name: {me.first_name}\n   {e('🔗')} Username: @{me.username}\n   {e('🆔')} ID: {me.id}")
     global BOT_USERNAME
     if BOT_USERNAME in ["your_bot_username", "", None]:
         BOT_USERNAME = me.username
@@ -4227,7 +4227,7 @@ async def post_init(application):
 
 def main():
     if not validate_config():
-        logger.error("❌ Configuration incomplete! Edit BOT_TOKEN in this file.")
+        logger.error("{e('❌')} Configuration incomplete! Edit BOT_TOKEN in this file.")
         sys.exit(1)
 
     logger.info(f"{e('📊')} Initializing database...")
@@ -4298,7 +4298,7 @@ def main():
     logger.info(f"{e('🚀')} Advanced Trading Signals Bot is running!")
     logger.info(f"{e('✨')} All emojis are premium custom emojis!")
     logger.info("=" * 50)
-    logger.info("⏹️  Press Ctrl+C to stop the bot")
+    logger.info("{e('⏹️')}  Press Ctrl+C to stop the bot")
     logger.info("=" * 50)
 
     application.run_polling(allowed_updates=["message", "callback_query", "chat_member"])
@@ -4307,7 +4307,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        logger.info("\n🛑 Bot stopped by user")
+        logger.info("\n{e('🛑')} Bot stopped by user")
     except Exception as e:
-        logger.error(f"❌ Bot error: {e}")
+        logger.error(f"{e('❌')} Bot error: {e}")
         sys.exit(1)
