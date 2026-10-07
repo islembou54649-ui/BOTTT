@@ -12,10 +12,10 @@ Features:
 - Broadcast & signal sending to channel
 - Welcome message + referral system
 - Auto-fetches bot username on startup
-- <tg-emoji emoji-id=\"5231101979903675433\">{e('✨')}</tg-emoji> ALL EMOJIS ARE NOW PREMIUM COLORFUL CUSTOM EMOJIS <tg-emoji emoji-id=\"5231101979903675433\">{e('✨')}</tg-emoji>
-- <tg-emoji emoji-id=\"5298780919207844086\">{e('✅')}</tg-emoji> FIXED: Callback query timeout error
-- <tg-emoji emoji-id=\"5298780919207844086\">{e('✅')}</tg-emoji> UPDATED: Future Signals icon (Neon Diamond)
-- <tg-emoji emoji-id=\"5298780919207844086\">{e('✅')}</tg-emoji> UPDATED: Token input from terminal
+- ALL EMOJIS ARE NOW PREMIUM COLORFUL CUSTOM EMOJIS
+- FIXED: Callback query timeout error
+- UPDATED: Future Signals icon (Neon Diamond)
+- UPDATED: Token input from terminal
 
 Just run: python bot.py
 ================================================================
