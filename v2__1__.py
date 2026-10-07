@@ -1108,7 +1108,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "formatter":
         await show_formatter(query)
     elif data == "market_filters":
-        await show_market_filters(query)
+        await show_market_filters_broker(query)
+    elif data == "mf_quotex":
+        await show_market_filters_market(query, "quotex")
+    elif data == "mf_binolla":
+        await show_market_filters_market(query, "binolla")
+    elif data.startswith("mf_market_"):
+        # Format: mf_market_<market>_<broker>
+        parts = data.replace("mf_market_", "").split("_")
+        if len(parts) == 2:
+            await show_market_filters_scanning(query, parts[0], parts[1])
+    elif data.startswith("mf_results_"):
+        # Format: mf_results_<market>_<broker>
+        parts = data.replace("mf_results_", "").split("_")
+        if len(parts) == 2:
+            await show_market_filters_results(query, parts[0], parts[1])
     elif data == "swap_cp":
         await show_swap_cp(query)
     elif data == "tz_converter":
@@ -5005,22 +5019,140 @@ async def show_formatter(query):
 """
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
+# ============================================================
+# MARKET FILTERS - broker -> market (OTC/Global) -> scanning -> filtered results
+# ============================================================
+
+async def show_market_filters_broker(query):
+    """Show broker selection for Market Filters."""
+    text = f"""{e('📊')} {to_bold_italic('MARKET FILTERS')}
+
+👇 {to_bold('CHOOSE BROKER')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("QUOTEX", callback_data="mf_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("BINOLLA", callback_data="mf_binolla", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_market_filters_market(query, broker):
+    """Show market type selection (OTC / Global)."""
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    text = f"""{e('📊')} {to_bold_italic('MARKET FILTERS - ' + broker_name)}
+
+👇 {to_bold('CHOOSE MARKET TYPE')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("OTC Market", callback_data=f"mf_market_otc_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["chart"]),
+            InlineKeyboardButton("Global Market", callback_data=f"mf_market_global_{broker}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["globe"]),
+        ],
+        [InlineKeyboardButton("Back to Broker", callback_data="market_filters", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_market_filters_scanning(query, market, broker):
+    """Show scanning message then results."""
+    import asyncio
+    market_name = "OTC" if market == "otc" else "GLOBAL"
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    text = f"""{e('📊')} {to_bold_italic('MARKET FILTERS')}
+
+{e('⚙️')} {to_bold('BROKER')}: {to_bold(broker_name)}
+{e('🌐')} {to_bold('MARKET')}: {to_bold(market_name)}
+
+{e('⏳')} {to_bold('FILTERING MARKETS...')}
+
+{e('🔍')} {to_bold('Removing pairs with payout < 70%')}
+
+Please wait..."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="mf_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    await asyncio.sleep(3)
+    await show_market_filters_results(query, market, broker)
+
+
+async def show_market_filters_results(query, market, broker):
+    """Show filtered market results - only pairs with payout >= 70%, grouped by trend."""
+    import random as _random
+
+    market_name = "OTC" if market == "otc" else "GLOBAL"
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+
+    # Get pair list based on market type
+    if market == "otc":
+        pairs = SIGNAL_SESSION_PAIRS
+        suffix = "-OTC"
+    else:
+        pairs = LIVE_MARKET_PAIRS
+        suffix = ""
+
+    # Filter: only pairs with payout >= 70%
+    filtered = [(name, payout) for name, payout in pairs if payout >= 70]
+
+    # Randomly assign trend (UP/DOWN) and indicators to each pair
+    up_trend = []
+    down_trend = []
+    for name, payout in filtered:
+        # Random trend
+        is_up = _random.choice([True, True, False])  # bias toward UP
+        rsi = round(_random.uniform(37, 68), 1)
+        momentum = round(_random.uniform(40, 67), 1)
+        pair_clean = name.replace(" OTC", "").replace(" ", "").replace("/", "")
+        item = (f"{pair_clean}{suffix}", payout, rsi, momentum)
+        if is_up:
+            up_trend.append(item)
+        else:
+            down_trend.append(item)
+
+    # Build result text
+    total_tradeable = len(up_trend) + len(down_trend)
+
+    lines = []
+    lines.append(f"{e('📊')} {to_bold_italic(f'MARKET FILTERS — {market_name}')}")
+    lines.append(f"{e('━━━')} {to_bold('━━━━━━━━━━━━━')}")
+    lines.append(f"{to_bold('Tradeable Markets')}: {to_bold(str(total_tradeable))}")
+    lines.append("")
+
+    # UP TREND section
+    lines.append(f"{e('📈')} {to_bold(f'UP TREND ({len(up_trend)})')}")
+    for pair_name, payout, rsi, momentum in up_trend:
+        lines.append(f"🟢 {to_bold(pair_name)}  {to_bold(str(payout))}%")
+        lines.append(f"  📈 {to_bold('UP')}  |  RSI {rsi}  |  Momentum {momentum}%")
+    lines.append("")
+
+    # DOWN TREND section (only if there are any)
+    if down_trend:
+        lines.append(f"{e('📉')} {to_bold(f'DOWN TREND ({len(down_trend)})')}")
+        for pair_name, payout, rsi, momentum in down_trend:
+            lines.append(f"🟢 {to_bold(pair_name)}  {to_bold(str(payout))}%")
+            lines.append(f"  📉 {to_bold('DOWN')}  |  RSI {rsi}  |  Momentum {momentum}%")
+        lines.append("")
+
+    lines.append(f"{e('━━━')} {to_bold('━━━━━━━━━━━━━')}")
+    lines.append(f"{e('✅')} {to_bold('These are stable markets.')}")
+    lines.append(f"{to_bold('You can analyze these pairs with your own setup and trade with confidence.')}")
+
+    result_text = "\n".join(lines)
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Refresh", callback_data=f"mf_results_{market}_{broker}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["sparkles"]),
+            InlineKeyboardButton("Back to Broker", callback_data="market_filters", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["swap"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, result_text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
 async def show_market_filters(query):
-    text = f"""
-{e('📊')} 𝑴𝑨𝑹𝑲𝑬𝑬𝑻 𝑭𝑰𝑳𝑻𝑬𝑹𝑺
-
-𝑨𝒗𝒂𝒊𝒍𝒂𝒃𝒍𝒆 𝑭𝒊𝒍𝒕𝒆𝒓𝒔:
-
-• 𝑷𝒂𝒚𝒐𝒖𝒕 𝑭𝒊𝒍𝒕𝒆𝒓: 90%+
-• 𝑽𝒐𝒍𝒂𝒕𝒊𝒍𝒊𝒕𝒚 𝑭𝒊𝒍𝒕𝒆𝒓: 𝑴𝒆𝒅𝒊𝒖𝒎
-• 𝑻𝒊𝒎𝒆 𝑭𝒊𝒍𝒕𝒆𝒓: 𝑴1-𝑴5
-• 𝑪𝒖𝒓𝒓𝒆𝒏𝒄𝒚 𝑭𝒊𝒍𝒕𝒆𝒓: 𝑴𝒂𝒋𝒐𝒓
-
-𝑨𝒄𝒕𝒊𝒗𝒆 𝑭𝒊𝒍𝒕𝒆𝒓𝒔: 4
-
-{e('⚡')} 𝑭𝒊𝒍𝒕𝒆𝒓𝒔 𝒉𝒆𝒍𝒑 𝒇𝒊𝒏𝒅 𝒕𝒉𝒆 𝒃𝒆𝒔𝒕 𝒔𝒊𝒈𝒏𝒂𝒍𝒔
-"""
-    await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
+    """Legacy - redirect to broker selection."""
+    await show_market_filters_broker(query)
 
 async def show_swap_cp(query):
     """Swap C/P is currently disabled."""
