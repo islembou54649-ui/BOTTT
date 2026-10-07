@@ -548,9 +548,8 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Axtiron FS", callback_data="axtiron_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
             InlineKeyboardButton("CHK Axtiron FS", callback_data="axtiron_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
         ],
-        # === Payouts ===
+        # === News & Signal ===
         [
-            InlineKeyboardButton("Top Payout", callback_data="top_payout", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["money"]),
             InlineKeyboardButton("News Signal", callback_data="news_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
         ],
         # === News & Filters ===
@@ -842,7 +841,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "control_bot":
         await show_control_bot(query, user_id)
     elif data == "top_payout":
-        await show_top_payout(query)
+        # Show top payouts page (88%+ pairs)
+        await show_top_payout_page(query)
     elif data == "future_signals":
         await show_future_signals(query)
     elif data == "future_results":
@@ -3417,28 +3417,38 @@ def to_bold(text: str) -> str:
 
 
 async def show_top_payout(query):
-    """Show top payout pairs (88%+) with bold text."""
+    """Legacy alias - redirect to top payout page."""
+    await show_top_payout_page(query)
+
+
+async def show_top_payout_page(query):
+    """Show top payout pairs (88%+) - merged with Live Payouts entry point."""
     # Filter pairs with payout 88%+
     top_pairs = [(name, payout) for name, payout in SIGNAL_SESSION_PAIRS if payout >= 88]
-    
+
     # Build text with bold Unicode for pair names and payouts
     lines = []
-    for i, (pair_name, payout) in enumerate(top_pairs, 1):
+    for pair_name, payout in top_pairs:
         bold_name = to_bold(pair_name)
         bold_payout = to_bold(f"{payout}%")
         lines.append(f"{bold_name}  {bold_payout}")
     pairs_text = "\n".join(lines)
 
-    text = f"""{e('💲')} <b>TOP PAYOUT</b>
+    text = f"""{e('💲')} {to_bold_italic('TOP PAYOUT (88%+)')}
 
-Pairs with 88%+ payout:
+{to_bold('Pairs with highest payout rates:')}
 
+━━━━━━━ • ━━━━━━━
 {pairs_text}
+━━━━━━━ • ━━━━━━━
 
-{e('📊')} <b>Updated:</b> {datetime.now().strftime('%H:%M')}
-{e('⚠️')} <b>Rates change continuously</b>"""
+{e('📊')} {to_bold('Updated')}: {datetime.now().strftime('%H:%M')}
+{e('⚠️')} {to_bold('Rates change continuously')}"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+        [
+            InlineKeyboardButton("Live Payouts", callback_data="live_payouts", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["diamond_premium"]),
+            InlineKeyboardButton("Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"]),
+        ],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
@@ -4841,17 +4851,19 @@ and will be available soon.
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_live_payouts(query):
-    """Show broker selection for live payouts."""
-    text = f"""{e('💎')} 𝙻𝙸𝚅𝙴 𝙿𝙰𝚈𝙾𝚄𝚃𝚂
+    """Show broker selection for live payouts (with Top Payouts option)."""
+    text = f"""{e('💎')} {to_bold_italic('LIVE PAYOUTS')}
 
-{e('👇')} 𝙲𝙷𝙾𝙾𝚂𝙴 𝙱𝚁𝙾𝙺𝙴𝚁
+{e('👇')} {to_bold('CHOOSE BROKER')}
 
-Select broker to view live payouts."""
+Select broker to view live payouts.
+Or view Top Payouts (88%+)."""
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("QUOTEX", callback_data="live_payouts_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
             InlineKeyboardButton("BINOLLA", callback_data="live_payouts_binolla", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
         ],
+        [InlineKeyboardButton("Top Payouts (88%+)", callback_data="top_payout", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["money"])],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
