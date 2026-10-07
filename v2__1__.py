@@ -695,7 +695,7 @@ def get_upgrade_keyboard():
 # ============================================================
 # 4) HANDLERS
 # ============================================================
-WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK, WAITING_LIVE_CHK, WAITING_BLK_CHK, WAITING_AXTIRON_CHK, WAITING_PROMO, WAITING_FORMATTER_SIGNAL, WAITING_FORMATTER_CHOICE = range(15)
+WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK, WAITING_LIVE_CHK, WAITING_BLK_CHK, WAITING_AXTIRON_CHK, WAITING_PROMO, WAITING_FORMATTER_SIGNAL, WAITING_FORMATTER_CHOICE, WAITING_SESSION_SIGNALS = range(16)
 
 async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
@@ -833,6 +833,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await start_signal_session_analysis(query, user_id, mtg_level, duration)
     elif data == "save_session":
         await save_session(query, context)
+    elif data.startswith("sess_bot_"):
+        # Format: sess_bot_<BOT>
+        await show_session_mtg_selection(update, context)
+    elif data.startswith("sess_mtg_"):
+        # Format: sess_mtg_<1|2>
+        await show_session_duration_selection(update, context)
+    elif data.startswith("sess_dur_"):
+        # Format: sess_dur_<duration>
+        await show_session_num_signals_selection(update, context)
+    elif data.startswith("sess_sig_"):
+        # Format: sess_sig_<10|20|30> (sess_sig_custom is handled by ConversationHandler)
+        sig_val = data.replace("sess_sig_", "")
+        if sig_val != "custom":
+            context.user_data["session_num_signals"] = sig_val
+            await show_session_confirmation(update, context)
+    elif data == "delete_all_sessions":
+        await delete_all_sessions(query)
+    elif data.startswith("delete_session_"):
+        # Format: delete_session_<id>
+        session_id = int(data.replace("delete_session_", ""))
+        await delete_session(query, session_id)
     elif data == "live_future":
         await show_live_future(query)
     elif data.startswith("set_schedule_"):
@@ -1666,54 +1687,106 @@ async def start_signal_session_analysis(query, user_id, mtg_level, duration="1M"
 
 
 async def show_time_session(query):
-    """Show the Time Session page - user can add a session with start/end time."""
+    """Show the Time Session page - user can add/delete sessions with full config."""
     user_id = query.from_user.id
+    # Ensure DB schema has all columns
+    _ensure_session_columns()
     # Get user's saved sessions
     sessions = []
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS time_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, start_time TEXT, end_time TEXT, enabled INTEGER DEFAULT 1)")
-        cursor.execute("SELECT id, start_time, end_time, enabled FROM time_sessions WHERE user_id = ? ORDER BY id", (user_id,))
+        cursor.execute("""CREATE TABLE IF NOT EXISTS time_sessions
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           user_id INTEGER,
+                           start_time TEXT,
+                           end_time TEXT,
+                           enabled INTEGER DEFAULT 1)""")
+        cursor.execute("""SELECT id, start_time, end_time, enabled, bot, mtg, duration, num_signals
+                          FROM time_sessions WHERE user_id = ? ORDER BY id""", (user_id,))
         rows = cursor.fetchall()
         sessions = [dict(r) for r in rows]
         conn.close()
-    except Exception:
-        pass
+    except Exception as exc:
+        logging.warning(f"Failed to load sessions: {exc}")
 
     if sessions:
         sessions_text = ""
         for i, s in enumerate(sessions, 1):
-            status = e('✅') if s["enabled"] else e('⏸️')
-            sessions_text += f"\n{i}. {status} {s['start_time']} - {s['end_time']}"
-        schedule_text = f"""{e('✅')} 𝒀𝒐𝒖𝒓 𝑺𝒄𝒉𝒆𝒅𝒖𝒍𝒆𝒅 𝑺𝒆𝒔𝒔𝒊𝒐𝒏𝒔:
+            status = e('✅') if s.get("enabled") else e('⏸️')
+            bot_name = s.get("bot") or "Auto"
+            mtg = s.get("mtg") or "1"
+            duration = s.get("duration") or "1M"
+            num_sig = s.get("num_signals") or "10"
+            sessions_text += f"\n{i}. {status} {s['start_time']} - {s['end_time']} | {bot_name} | MTG{mtg} | {duration} | {num_sig} sigs"
+        schedule_text = f"""{e('✅')} {to_bold('Your Scheduled Sessions')}:
 {sessions_text}"""
     else:
-        schedule_text = f"""{e('⚠️')} 𝙽𝙾 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴𝙳 𝚂𝙴𝚂𝚂𝙸𝙾𝙽𝚂 𝚈𝙴𝚃
+        schedule_text = f"""{e('⚠️')} {to_bold_italic('NO SCHEDULED SESSIONS YET')}
 
-𝚈𝚘𝚞 𝚍𝚘𝚗'𝚝 𝚑𝚊𝚟𝚎 𝚊𝚗𝚢 𝚜𝚌𝚑𝚎𝚍𝚞𝚕𝚎𝚍 𝚜𝚎𝚜𝚜𝚒𝚘𝚗𝚜 𝚊𝚝 𝚝𝚑𝚎 𝚖𝚘𝚖𝚎𝚗𝚝.
+{to_bold("You don't have any scheduled sessions at the moment.")}
 
-{e('➕')} 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
+{e('➕')} {to_bold_italic('NEW SCHEDULE')}
 
-{e('👇')} 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝚁𝙴𝙰𝚃𝙴 𝙰 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴."""
+{e('👇')} {to_bold('TAP BELOW TO CREATE A NEW SCHEDULE')}"""
 
-    text = f"""{e('⏰')} 𝚃𝙸𝙼𝙴 𝚂𝙴𝚂𝚂𝙸𝙾𝙽
+    text = f"""{e('⏰')} {to_bold_italic('TIME SESSION')}
 
 {schedule_text}
 
 ━━━━━━━━━━━━━━━━━━━━
 
-{e('💡')} 𝑯𝒐𝒘 𝒊𝒕 𝒘𝒐𝒓𝒌𝒔:
-Set a time period and the bot will
-automatically send you trading signals
-during that time every day.f"""
+{e('💡')} {to_bold('How it works')}:
+{to_bold('Set a time period and configure bot, MTG, duration,')}
+{to_bold('and number of signals. The bot will automatically send')}
+{to_bold('you trading signals during that time every day.')}"""
 
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➕ New Schedule", callback_data="new_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
-        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
-    ])
+    keyboard_rows = [
+        [
+            InlineKeyboardButton("➕ New Schedule", callback_data="new_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("🗑️ Delete All", callback_data="delete_all_sessions", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+        ],
+    ]
+    # Add individual delete buttons for each session
+    for i, s in enumerate(sessions, 1):
+        keyboard_rows.append([
+            InlineKeyboardButton(f"🗑️ Delete #{i} ({s['start_time']}-{s['end_time']})",
+                                 callback_data=f"delete_session_{s['id']}",
+                                 style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])
+        ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])])
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+def _ensure_session_columns():
+    """Ensure time_sessions table has all required columns."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""CREATE TABLE IF NOT EXISTS time_sessions
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           user_id INTEGER,
+                           start_time TEXT,
+                           end_time TEXT,
+                           enabled INTEGER DEFAULT 1)""")
+        # Add new columns if missing (ALTER TABLE ADD COLUMN is idempotent-safe with check)
+        cursor.execute("PRAGMA table_info(time_sessions)")
+        existing_cols = {row[1] for row in cursor.fetchall()}
+        new_cols = {
+            "bot": "TEXT DEFAULT 'Auto'",
+            "mtg": "TEXT DEFAULT '1'",
+            "duration": "TEXT DEFAULT '1M'",
+            "num_signals": "TEXT DEFAULT '10'",
+        }
+        for col_name, col_def in new_cols.items():
+            if col_name not in existing_cols:
+                cursor.execute(f"ALTER TABLE time_sessions ADD COLUMN {col_name} {col_def}")
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        logging.warning(f"Failed to ensure session columns: {exc}")
 
 
 async def start_new_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1723,13 +1796,16 @@ async def start_new_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
     except Exception:
         pass
-    text = f"""{e('⏰')} 𝙽𝙴𝚆 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
+    # Clear any previous session data
+    for key in ("session_start", "session_end", "session_bot", "session_mtg", "session_duration", "session_num_signals"):
+        context.user_data.pop(key, None)
+    text = f"""{e('⏰')} {to_bold_italic('NEW SCHEDULE')}
 
-{e('👇')} 𝙿𝙻𝙴𝙰𝚂𝙴 𝚂𝙴𝙽𝙳 𝚃𝙷𝙴 𝚂𝚃𝙰𝚁𝚃 𝚃𝙸𝙼𝙴
+{e('👇')} {to_bold('SEND THE START TIME')}
 
-𝙵𝚘𝚛𝚖𝚊𝚝: 𝙷𝙷:𝙼𝙼 (𝚎.𝚐. 09:00)
+{to_bold('Format')}: HH:MM (e.g. 09:00)
 
-{e('⚠️')} 𝚂𝚎𝚗𝚍 /cancel 𝚝𝚘 𝚌𝚊𝚗𝚌𝚎𝚕"""
+{e('⚠️')} Send /cancel to cancel"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Cancel", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
@@ -1754,9 +1830,9 @@ async def receive_session_start(update: Update, context: ContextTypes.DEFAULT_TY
 
     context.user_data["session_start"] = text
     await update.message.reply_text(
-        f"{e('✅')} Start time received: {text}\n\n"
-        f"{e('⏰')} Now please send the END time\n\n"
-        f"Format: HH:MM (e.g. 17:00)\n\n"
+        f"{e('✅')} {to_bold('Start time received')}: {text}\n\n"
+        f"{e('⏰')} {to_bold('Now please send the END time')}\n\n"
+        f"{to_bold('Format')}: HH:MM (e.g. 17:00)\n\n"
         f"{e('⚠️')} Send /cancel to cancel",
         parse_mode=ParseMode.HTML
     )
@@ -1764,7 +1840,7 @@ async def receive_session_start(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def receive_session_end(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Receive the end time and show confirmation with Save/Back buttons."""
+    """Receive the end time and show bot selection."""
     text = update.message.text.strip()
     try:
         parts = text.split(":")
@@ -1781,52 +1857,283 @@ async def receive_session_end(update: Update, context: ContextTypes.DEFAULT_TYPE
     start_time = context.user_data.get("session_start")
     end_time = text
 
-    text_msg = f"""{e('✅')} 𝙲𝙾𝙽𝙵𝙸𝚁𝙼 𝚂𝙲𝙷𝙴𝙳𝚄𝙻𝙴
+    # Show bot selection
+    text_msg = f"""{e('🤖')} {to_bold_italic('CHOOSE BOT')}
 
-{e('⏰')} 𝚂𝚃𝙰𝚁𝚃: {start_time}
-{e('⏰')} 𝙴𝙽𝙳:   {end_time}
+{e('⏰')} {to_bold('START')}: {start_time}
+{e('⏰')} {to_bold('END')}:   {end_time}
 
-{e('👇')} 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼f"""
+{e('👇')} {to_bold('WHICH BOT WILL WORK?')}"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("💾 Save Schedule", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
-        [InlineKeyboardButton("Back to Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+        [
+            InlineKeyboardButton("QUOTEX", callback_data="sess_bot_QUOTEX", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("BINOLLA", callback_data="sess_bot_BINOLLA", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Cancel", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
     await update.message.reply_text(text_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     return ConversationHandler.END
 
 
-async def save_session(query, context):
-    """Save the session to database and return to main menu."""
-    user_id = query.from_user.id
+async def show_session_mtg_selection(update: Update, context):
+    """Show MTG selection (MTG1 or MTG2)."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    bot = query.data.replace("sess_bot_", "")
+    context.user_data["session_bot"] = bot
     start_time = context.user_data.get("session_start")
     end_time = context.user_data.get("session_end")
 
+    text = f"""{e('⚙️')} {to_bold_italic('CHOOSE MTG')}
+
+{e('⏰')} {to_bold('START')}: {start_time}
+{e('⏰')} {to_bold('END')}:   {end_time}
+{e('🤖')} {to_bold('BOT')}: {to_bold(bot)}
+
+{e('👇')} {to_bold('WHICH MTG LEVEL?')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("MTG1", callback_data="sess_mtg_1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("MTG2", callback_data="sess_mtg_2", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_session_duration_selection(update: Update, context):
+    """Show trade duration selection (1M/2M/3M/4M/5M)."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    mtg = query.data.replace("sess_mtg_", "")
+    context.user_data["session_mtg"] = mtg
+    start_time = context.user_data.get("session_start")
+    end_time = context.user_data.get("session_end")
+    bot = context.user_data.get("session_bot")
+
+    text = f"""{e('⏳')} {to_bold_italic('CHOOSE TRADE DURATION')}
+
+{e('⏰')} {to_bold('START')}: {start_time}
+{e('⏰')} {to_bold('END')}:   {end_time}
+{e('🤖')} {to_bold('BOT')}: {to_bold(bot)}
+{e('⚙️')} {to_bold('MTG')}: {to_bold('MTG' + mtg)}
+
+{e('👇')} {to_bold('TRADE DURATION')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("1M", callback_data="sess_dur_1M", style=STYLE_BLUE),
+            InlineKeyboardButton("2M", callback_data="sess_dur_2M", style=STYLE_BLUE),
+            InlineKeyboardButton("3M", callback_data="sess_dur_3M", style=STYLE_BLUE),
+        ],
+        [
+            InlineKeyboardButton("4M", callback_data="sess_dur_4M", style=STYLE_BLUE),
+            InlineKeyboardButton("5M", callback_data="sess_dur_5M", style=STYLE_BLUE),
+        ],
+        [InlineKeyboardButton("Back", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_session_num_signals_selection(update: Update, context):
+    """Show number of signals selection (10/20/30/custom)."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    duration = query.data.replace("sess_dur_", "")
+    context.user_data["session_duration"] = duration
+    start_time = context.user_data.get("session_start")
+    end_time = context.user_data.get("session_end")
+    bot = context.user_data.get("session_bot")
+    mtg = context.user_data.get("session_mtg")
+
+    text = f"""{e('🔢')} {to_bold_italic('CHOOSE NUMBER OF SIGNALS')}
+
+{e('⏰')} {to_bold('START')}: {start_time}
+{e('⏰')} {to_bold('END')}:   {end_time}
+{e('🤖')} {to_bold('BOT')}: {to_bold(bot)}
+{e('⚙️')} {to_bold('MTG')}: {to_bold('MTG' + mtg)}
+{e('⏳')} {to_bold('DURATION')}: {to_bold(duration)}
+
+{e('👇')} {to_bold('HOW MANY SIGNALS?')}
+
+{e('💡')} {to_bold('Pick a preset or send a custom number')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("10", callback_data="sess_sig_10", style=STYLE_GREEN),
+            InlineKeyboardButton("20", callback_data="sess_sig_20", style=STYLE_GREEN),
+            InlineKeyboardButton("30", callback_data="sess_sig_30", style=STYLE_GREEN),
+        ],
+        [InlineKeyboardButton("Custom Number", callback_data="sess_sig_custom", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Back", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_session_custom_signals_input(update: Update, context):
+    """Ask user to send a custom number of signals."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    text = f"""{e('🔢')} {to_bold_italic('CUSTOM NUMBER OF SIGNALS')}
+
+{e('👇')} {to_bold('SEND A NUMBER')}
+
+{to_bold('Example')}: 15, 25, 50, 100...
+
+{e('⚠️')} Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_SESSION_SIGNALS
+
+
+async def receive_session_custom_signals(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Receive custom number of signals and show confirmation page."""
+    text = update.message.text.strip()
+    try:
+        num = int(text)
+        if num < 1 or num > 1000:
+            raise ValueError
+    except ValueError:
+        await update.message.reply_text(f"{e('⚠️')} Invalid number! Send a number between 1 and 1000\n\nSend /cancel to cancel")
+        return WAITING_SESSION_SIGNALS
+    context.user_data["session_num_signals"] = str(num)
+    await show_session_confirmation(update, context)
+    return ConversationHandler.END
+
+
+async def show_session_confirmation(update: Update, context):
+    """Show confirmation page with all session details + Save/Cancel."""
+    start_time = context.user_data.get("session_start")
+    end_time = context.user_data.get("session_end")
+    bot = context.user_data.get("session_bot", "Auto")
+    mtg = context.user_data.get("session_mtg", "1")
+    duration = context.user_data.get("session_duration", "1M")
+    num_signals = context.user_data.get("session_num_signals", "10")
+
+    text = f"""{e('✅')} {to_bold_italic('CONFIRM SCHEDULE')}
+
+{e('⏰')} {to_bold('START')}: {to_bold(start_time)}
+{e('⏰')} {to_bold('END')}:   {to_bold(end_time)}
+{e('🤖')} {to_bold('BOT')}: {to_bold(bot)}
+{e('⚙️')} {to_bold('MTG')}: {to_bold('MTG' + mtg)}
+{e('⏳')} {to_bold('DURATION')}: {to_bold(duration)}
+{e('🔢')} {to_bold('SIGNALS')}: {to_bold(num_signals)}
+
+━━━━━━━ • ━━━━━━━
+
+{e('👇')} {to_bold('PRESS BELOW TO CONFIRM')}"""
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("💾 Save", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("❌ Cancel", callback_data="time_session", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+        ],
+    ])
+    # Send as new message if from text input, else edit
+    if hasattr(update, "message") and update.message:
+        await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    else:
+        query = update.callback_query
+        await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def save_session(query, context):
+    """Save the session to database with all config."""
+    user_id = query.from_user.id
+    start_time = context.user_data.get("session_start")
+    end_time = context.user_data.get("session_end")
+    bot = context.user_data.get("session_bot", "Auto")
+    mtg = context.user_data.get("session_mtg", "1")
+    duration = context.user_data.get("session_duration", "1M")
+    num_signals = context.user_data.get("session_num_signals", "10")
+
     if not start_time or not end_time:
-        await safe_edit_message(query, f"{e('⚠️')} Session data missing. Please try again.", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
+        await safe_edit_message(query, f"{e('⚠️')} {to_bold('Session data missing. Please try again.')}", reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
         return
 
+    _ensure_session_columns()
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS time_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, start_time TEXT, end_time TEXT, enabled INTEGER DEFAULT 1)")
-        cursor.execute("INSERT INTO time_sessions (user_id, start_time, end_time, enabled) VALUES (?, ?, ?, 1)", (user_id, start_time, end_time))
+        cursor.execute("""CREATE TABLE IF NOT EXISTS time_sessions
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           user_id INTEGER,
+                           start_time TEXT,
+                           end_time TEXT,
+                           enabled INTEGER DEFAULT 1,
+                           bot TEXT DEFAULT 'Auto',
+                           mtg TEXT DEFAULT '1',
+                           duration TEXT DEFAULT '1M',
+                           num_signals TEXT DEFAULT '10')""")
+        cursor.execute("""INSERT INTO time_sessions
+                          (user_id, start_time, end_time, enabled, bot, mtg, duration, num_signals)
+                          VALUES (?, ?, ?, 1, ?, ?, ?, ?)""",
+                       (user_id, start_time, end_time, bot, mtg, duration, num_signals))
         conn.commit()
         conn.close()
     except Exception as exc:
         logging.warning(f"Failed to save session: {exc}")
 
     # Clear user data
-    context.user_data.pop("session_start", None)
-    context.user_data.pop("session_end", None)
+    for key in ("session_start", "session_end", "session_bot", "session_mtg", "session_duration", "session_num_signals"):
+        context.user_data.pop(key, None)
 
-    text = f"""{e('✅')} 𝚂𝙲𝚑𝚎𝚍𝚞𝚕𝚎 𝚂𝚊𝚟𝚎𝚍!
+    text = f"""{e('✅')} {to_bold_italic('SCHEDULE SAVED!')}
 
-{e('⏰')} Start: {start_time}
-{e('⏰')} End: {end_time}
+{e('⏰')} {to_bold('Start')}: {to_bold(start_time)}
+{e('⏰')} {to_bold('End')}: {to_bold(end_time)}
+{e('🤖')} {to_bold('Bot')}: {to_bold(bot)}
+{e('⚙️')} {to_bold('MTG')}: {to_bold('MTG' + mtg)}
+{e('⏳')} {to_bold('Duration')}: {to_bold(duration)}
+{e('🔢')} {to_bold('Signals')}: {to_bold(num_signals)}
 
-{e('💡')} The bot will send you trading signals
-during this time period every day."""
-    await safe_edit_message(query, text, reply_markup=get_main_menu_keyboard(), parse_mode=ParseMode.HTML)
+{e('💡')} {to_bold('The bot will send you trading signals')}
+{to_bold('during this time period every day.')}"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Back to Sessions", callback_data="time_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["house"])],
+        [InlineKeyboardButton("Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def delete_session(query, session_id):
+    """Delete a specific session by ID."""
+    user_id = query.from_user.id
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM time_sessions WHERE id = ? AND user_id = ?", (session_id, user_id))
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        logging.warning(f"Failed to delete session: {exc}")
+    await show_time_session(query)
+
+
+async def delete_all_sessions(query):
+    """Delete all sessions for the user."""
+    user_id = query.from_user.id
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM time_sessions WHERE user_id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        logging.warning(f"Failed to delete all sessions: {exc}")
+    await show_time_session(query)
 
 
 async def show_live_future(query):
@@ -5921,10 +6228,14 @@ def main():
     application.add_handler(broadcast_conversation)
 
     session_conversation = ConversationHandler(
-        entry_points=[CallbackQueryHandler(start_new_session, pattern="^new_session$")],
+        entry_points=[
+            CallbackQueryHandler(start_new_session, pattern="^new_session$"),
+            CallbackQueryHandler(show_session_custom_signals_input, pattern="^sess_sig_custom$"),
+        ],
         states={
             WAITING_SESSION_START: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_session_start)],
             WAITING_SESSION_END: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_session_end)],
+            WAITING_SESSION_SIGNALS: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_session_custom_signals)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
