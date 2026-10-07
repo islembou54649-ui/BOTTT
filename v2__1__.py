@@ -552,9 +552,6 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Axtiron FS", callback_data="axtiron_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
             InlineKeyboardButton("CHK Axtiron FS", callback_data="axtiron_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
         ],
-        [
-            InlineKeyboardButton("Whiteout FS", callback_data="whiteout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
-        ],
         # === Payouts ===
         [
             InlineKeyboardButton("Top Payout", callback_data="top_payout", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["money"]),
