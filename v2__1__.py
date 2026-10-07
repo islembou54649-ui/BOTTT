@@ -198,6 +198,34 @@ _EMOJI_MAP_CACHE = {
     "⏹️": "5462921117423384478",  # tools fallback
     "⏹": "5462921117423384478",   # tools fallback
     "📛": "5422683699130933153",   # user fallback
+    # Additional emojis for full coverage
+    "⌛": "5386367538735104399",  # NewsEmoji - hourglass done
+    "⏱️": "5350438526691326210",  # TopicIcons - stopwatch
+    "⏸️": "5462921117423384478",  # tools fallback
+    "⚙️": "5341715473882955310",  # NewsEmoji - gear
+    "⚠️": "5431445849026611010",  # CuteEmoji - warning
+    "❌": "5465665476971471368",  # RestrictedEmoji - cross
+    "❤️": "5449505950283078474",  # RestrictedEmoji - heart
+    "➕": "5417974701282571313",  # GlowingFont - plus
+    "➖": "5418206758365574104",  # GlowingFont - minus
+    "🆓": "5364112491381006601",  # RestrictedEmoji - free
+    "🌀": "5429187589582111255",  # CuteEmoji - swirl
+    "🌐": "5447410659077661506",  # NewsEmoji - globe
+    "🐛": "5397991236361527676",  # RestrictedEmoji - bug
+    "💲": "5373350287429872269",  # NeonEmoji - dollar
+    "📆": "5431897022456145283",  # RestrictedEmoji - calendar
+    "📉": "5361748661640372834",  # RestrictedEmoji - chart down
+    "📝": "5334882760735598374",  # RestrictedEmoji - memo
+    "📞": "5404350824501491839",  # NeonEmoji - phone
+    "📣": "5469903029144657419",  # RestrictedEmoji - megaphone
+    "📤": "5433614747381538714",  # RestrictedEmoji - outbox
+    "🔄": "5264727218734524899",  # RestrictedEmoji - arrows
+    "🔍": "5188217332748527444",  # RestrictedEmoji - magnifier
+    "🔒": "5348223165380179822",  # TopicIcons - lock
+    "🔗": "5375129357373165375",  # RestrictedEmoji - link
+    "🔮": "5361837567463399422",  # RestrictedEmoji - crystal ball
+    "🛑": "5413610645142642221",  # BubbleEmoji - stop
+    "🇧🇩": "5372981976804366741",  # robot fallback for flags
 }
 _EMOJI_MAP_LOADED = True  # Already loaded - no file needed
 
