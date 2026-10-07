@@ -530,7 +530,6 @@ def get_main_menu_keyboard():
         # === Signals ===
         [
             InlineKeyboardButton("Live Signal", callback_data="live_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["lightning_premium"]),
-            InlineKeyboardButton("Bug Signal", callback_data="bug_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["bug"]),
         ],
         # === Market FS + Checkers (paired by market type) ===
         [
@@ -575,12 +574,9 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Upgrade", callback_data="upgrade", style=STYLE_BLUE, icon_custom_emoji_id="5217880283860194582"),
             InlineKeyboardButton("Free Bots", callback_data="free_bots", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["gift"]),
         ],
-        # === Promo Code ===
+        # === Promo Code & Referral (paired) ===
         [
             InlineKeyboardButton("Promo Code", callback_data="promo_code", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["gift"]),
-        ],
-        # === Misc ===
-        [
             InlineKeyboardButton("Referral Link", callback_data="referral_link", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["balloon_premium"]),
         ],
         # === Account ===
