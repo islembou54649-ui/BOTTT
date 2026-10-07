@@ -5826,11 +5826,19 @@ async def track_channel_join(update: Update, context: ContextTypes.DEFAULT_TYPE)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO, handlers=[logging.FileHandler('bot.log', encoding='utf-8'), logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+# Silence PTB ConversationHandler per_message warnings (we use per_message=False intentionally)
+logging.getLogger("telegram").setLevel(logging.ERROR)
+logging.getLogger("telegram.ext").setLevel(logging.ERROR)
+# Filter out PTBUserWarning about per_message
+import warnings as _warnings
+_warnings.filterwarnings("ignore", message=".*per_message.*", category=UserWarning)
+_warnings.filterwarnings("ignore", message=".*per_chat.*", category=UserWarning)
+_warnings.filterwarnings("ignore", message=".*per_user.*", category=UserWarning)
 
 async def post_init(application):
     me = await application.bot.get_me()
     logger.info("=" * 50)
-    logger.info(f"{e('🤖')} Bot Info:\n   {e('📛')} Name: {me.first_name}\n   {e('🔗')} Username: @{me.username}\n   {e('🆔')} ID: {me.id}")
+    logger.info(f"Bot Info:\n   Name: {me.first_name}\n   Username: @{me.username}\n   ID: {me.id}")
     global BOT_USERNAME
     if BOT_USERNAME in ["your_bot_username", "", None]:
         BOT_USERNAME = me.username
@@ -5838,14 +5846,14 @@ async def post_init(application):
 
 def main():
     if not validate_config():
-        logger.error("{e('❌')} Configuration incomplete! Edit BOT_TOKEN in this file.")
+        logger.error("Configuration incomplete! Edit BOT_TOKEN in this file.")
         sys.exit(1)
 
-    logger.info(f"{e('📊')} Initializing database...")
+    logger.info("Initializing database...")
     init_db()
-    logger.info(f"{e('✅')} Database initialized successfully")
+    logger.info("Database initialized successfully")
 
-    logger.info(f"{e('🤖')} Starting the bot...")
+    logger.info("Starting the bot...")
     application = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
 
     application.add_handler(CommandHandler("start", start))
@@ -5969,10 +5977,9 @@ def main():
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
 
     logger.info("=" * 50)
-    logger.info(f"{e('🚀')} Advanced Trading Signals Bot is running!")
-    logger.info(f"{e('✨')} All emojis are premium custom emojis!")
+    logger.info("Advanced Trading Signals Bot is running!")
     logger.info("=" * 50)
-    logger.info("{e('⏹️')}  Press Ctrl+C to stop the bot")
+    logger.info("Press Ctrl+C to stop the bot")
     logger.info("=" * 50)
 
     application.run_polling(allowed_updates=["message", "callback_query", "chat_member"])
@@ -5981,7 +5988,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        logger.info("\n{e('🛑')} Bot stopped by user")
-    except Exception as e:
-        logger.error(f"{e('❌')} Bot error: {e}")
+        logger.info("\nBot stopped by user")
+    except Exception as exc:
+        logger.error(f"Bot error: {exc}")
         sys.exit(1)
