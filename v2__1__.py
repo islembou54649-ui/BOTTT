@@ -1691,8 +1691,12 @@ async def show_otc_broker(query):
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
 
-async def start_otc_time_input(update, context, broker):
+async def start_otc_time_input(update, context, broker=None):
     """Start asking for time range - ask for start time."""
+    if broker is None:
+        query = update.callback_query
+        data = query.data
+        broker = "quotex" if "quotex" in data else "binolla"
     query = update.callback_query
     try:
         await query.answer()
@@ -2164,8 +2168,13 @@ async def show_blackout_broker(query):
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
 
-async def start_blackout_time_input(update, context, broker):
+async def start_blackout_time_input(update, context, broker=None):
     """Start asking for time range - ask for start time."""
+    # If broker not passed (called from ConversationHandler), detect from callback_data
+    if broker is None:
+        query = update.callback_query
+        data = query.data
+        broker = "quotex" if "quotex" in data else "binolla"
     query = update.callback_query
     try:
         await query.answer()
