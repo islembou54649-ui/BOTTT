@@ -529,9 +529,6 @@ def get_main_menu_keyboard():
         ],
         # === Signals ===
         [
-            InlineKeyboardButton("Live Future", callback_data="live_future", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
-        ],
-        [
             InlineKeyboardButton("Live Signal", callback_data="live_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["lightning_premium"]),
             InlineKeyboardButton("Bug Signal", callback_data="bug_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["bug"]),
         ],
