@@ -652,13 +652,13 @@ def get_ratings_keyboard():
     f"""Rating keyboard with 1-5 stars and back button."""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("1 {e('⭐')}", callback_data="rate_1", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
-            InlineKeyboardButton("2 {e('⭐⭐')}", callback_data="rate_2", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
-            InlineKeyboardButton("3 {e('⭐⭐⭐')}", callback_data="rate_3", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("1 ⭐", callback_data="rate_1", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("2 ⭐⭐", callback_data="rate_2", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("3 ⭐⭐⭐", callback_data="rate_3", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["star"]),
         ],
         [
-            InlineKeyboardButton("4 {e('⭐⭐⭐⭐')}", callback_data="rate_4", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
-            InlineKeyboardButton("5 {e('⭐⭐⭐⭐⭐')}", callback_data="rate_5", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("4 ⭐⭐⭐⭐", callback_data="rate_4", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
+            InlineKeyboardButton("5 ⭐⭐⭐⭐⭐", callback_data="rate_5", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["star"]),
         ],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
@@ -1184,21 +1184,21 @@ during that time every day.f"""
     # Build keyboard rows as a list
     keyboard_rows = [
         [
-            InlineKeyboardButton("{e('🌅')} Morning 09:00-12:00", callback_data="set_schedule_09:00_12:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
-            InlineKeyboardButton("{e('☀️')} Afternoon 14:00-17:00", callback_data="set_schedule_14:00_17:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("🌅 Morning 09:00-12:00", callback_data="set_schedule_09:00_12:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("☀️ Afternoon 14:00-17:00", callback_data="set_schedule_14:00_17:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
         ],
         [
-            InlineKeyboardButton("{e('🌆')} Evening 19:00-22:00", callback_data="set_schedule_19:00_22:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
-            InlineKeyboardButton("{e('🌙')} Night 22:00-01:00", callback_data="set_schedule_22:00_01:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("🌆 Evening 19:00-22:00", callback_data="set_schedule_19:00_22:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("🌙 Night 22:00-01:00", callback_data="set_schedule_22:00_01:00", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
         ],
         [
-            InlineKeyboardButton("{e('🕐')} Full Day 00:00-23:59", callback_data="set_schedule_00:00_23:59", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
+            InlineKeyboardButton("🕐 Full Day 00:00-23:59", callback_data="set_schedule_00:00_23:59", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"]),
         ],
     ]
     if scheduled_time and scheduled_time.get("start_time"):
         keyboard_rows.append([
-            InlineKeyboardButton("{e('⏸️')} Pause Schedule", callback_data="pause_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
-            InlineKeyboardButton("{e('🗑️')} Delete Schedule", callback_data="delete_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+            InlineKeyboardButton("⏸️ Pause Schedule", callback_data="pause_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+            InlineKeyboardButton("🗑️ Delete Schedule", callback_data="delete_schedule", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
         ])
     keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])])
 
@@ -1330,9 +1330,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected_pairs)} pairs
     # Navigation buttons
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"signal_session_page_{broker}_{page-1}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"]))
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"signal_session_page_{broker}_{page-1}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"]))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"signal_session_page_{broker}_{page+1}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"]))
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"signal_session_page_{broker}_{page+1}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"]))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -1572,7 +1572,7 @@ automatically send you trading signals
 during that time every day.f"""
 
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("{e('➕')} New Schedule", callback_data="new_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
+        [InlineKeyboardButton("➕ New Schedule", callback_data="new_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["clock_premium"])],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -1650,7 +1650,7 @@ async def receive_session_end(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 {e('👇')} 𝙿𝚁𝙴𝚂𝚂 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙾𝙽𝙵𝙸𝚁𝙼f"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("{e('💾')} Save Schedule", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
+        [InlineKeyboardButton("💾 Save Schedule", callback_data="save_session", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"])],
         [InlineKeyboardButton("Back to Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
     await update.message.reply_text(text_msg, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -1699,7 +1699,7 @@ async def show_live_future(query):
 
 {e('👇')} 𝚃𝙰𝙿 𝙱𝙴𝙻𝙾𝚆 𝚃𝙾 𝙲𝙷𝙴𝙲𝙺:f"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("{e('📊')} Check Results", callback_data="future_results", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("📊 Check Results", callback_data="future_results", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["stats"])],
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -1865,9 +1865,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -1920,9 +1920,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2038,7 +2038,7 @@ async def show_otc_analysis_ready(query, user_id):
 
 {e('👇')} <b>PRESS TO START ANALYSIS</b>f"""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("{e('🟢')} Start Analysis", callback_data="otc_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
+        [InlineKeyboardButton("🟢 Start Analysis", callback_data="otc_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
         [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -2087,7 +2087,7 @@ async def show_otc_starting(query, user_id):
 
 Please wait..."""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Please wait...", callback_data="otc_none", style=STYLE_BLUE)],
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="otc_none", style=STYLE_BLUE)],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     await asyncio.sleep(2)
@@ -2347,9 +2347,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2402,9 +2402,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"blackout_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"blackout_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2664,7 +2664,7 @@ Market: {market_name}
 Please wait while we scan
 the market for opportunities."""
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("{e('⏳')} Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     # Wait 2 seconds then show pairs
@@ -2737,9 +2737,9 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
 
     nav_row = []
     if page > 0:
-        nav_row.append(InlineKeyboardButton("{e('⬅️')} Previous", callback_data=f"axtiron_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"axtiron_pairs_{broker}_{page-1}", style=STYLE_BLUE))
     if page < total_pages - 1:
-        nav_row.append(InlineKeyboardButton("{e('➡️')} Next", callback_data=f"axtiron_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"axtiron_pairs_{broker}_{page+1}", style=STYLE_BLUE))
     if nav_row:
         keyboard_rows.append(nav_row)
 
@@ -2834,7 +2834,7 @@ async def show_axtiron_results(query, user_id):
 Please wait while we engineer
 your premium future signals.f"""
     wait_keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("{e('⏳')} Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="axtiron_none", style=STYLE_BLUE)],
     ])
     await safe_edit_message(query, wait_text, reply_markup=wait_keyboard, parse_mode=ParseMode.HTML)
     await asyncio.sleep(2)
