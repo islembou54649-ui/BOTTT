@@ -535,26 +535,25 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("Live Signal", callback_data="live_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["lightning_premium"]),
             InlineKeyboardButton("Bug Signal", callback_data="bug_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["bug"]),
         ],
-        # === Checkers ===
+        # === Market FS + Checkers (paired by market type) ===
         [
-            InlineKeyboardButton("Live Checker", callback_data="live_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
+            InlineKeyboardButton("OTC Market FS", callback_data="otc_market_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["chart_market"]),
             InlineKeyboardButton("OTC Checker", callback_data="otc_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
         ],
         [
-            InlineKeyboardButton("Blackout Checker", callback_data="blackout_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
-            InlineKeyboardButton("CHK Axtiron FS", callback_data="axtiron_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
-        ],
-        # === Market Future Signals (FS) ===
-        [
-            InlineKeyboardButton("OTC Market FS", callback_data="otc_market_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["chart_market"]),
             InlineKeyboardButton("Live Market FS", callback_data="live_market_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["globe"]),
+            InlineKeyboardButton("Live Checker", callback_data="live_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
         ],
         [
             InlineKeyboardButton("Blackout FS", callback_data="blackout_fs", style=STYLE_BLUE, icon_custom_emoji_id="5366254421636298770"),
-            InlineKeyboardButton("Whiteout FS", callback_data="whiteout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
+            InlineKeyboardButton("Blackout Checker", callback_data="blackout_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
         ],
         [
             InlineKeyboardButton("Axtiron FS", callback_data="axtiron_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
+            InlineKeyboardButton("CHK Axtiron FS", callback_data="axtiron_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
+        ],
+        [
+            InlineKeyboardButton("Whiteout FS", callback_data="whiteout_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
         ],
         # === Payouts ===
         [
