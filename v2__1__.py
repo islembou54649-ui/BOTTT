@@ -642,7 +642,7 @@ def get_upgrade_keyboard():
 # ============================================================
 # 4) HANDLERS
 # ============================================================
-WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END = range(6)
+WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END = range(8)
 
 async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
@@ -845,7 +845,35 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "whiteout_checker":
         await show_checker(query, "Whiteout Checker")
     elif data == "otc_market_fs":
-        await show_market_fs(query, "OTC Market")
+        await show_otc_broker(query)
+    elif data == "otc_quotex":
+        await start_otc_time_input(update, context, "quotex")
+    elif data == "otc_binolla":
+        await start_otc_time_input(update, context, "binolla")
+    elif data.startswith("otc_pairs_"):
+        parts = data.replace("otc_pairs_", "").split("_")
+        if len(parts) == 2:
+            await show_otc_pairs(query, parts[0], int(parts[1]))
+    elif data.startswith("otc_toggle_"):
+        parts = data.replace("otc_toggle_", "").split("_")
+        if len(parts) == 3:
+            await toggle_otc_pair(query, user_id, parts[0], int(parts[1]), int(parts[2]))
+    elif data == "otc_select_all":
+        await otc_select_all(query, user_id)
+    elif data == "otc_start_pairs":
+        await show_otc_direction(query, user_id)
+    elif data.startswith("otc_dir_"):
+        # Format: otc_dir_<direction>
+        direction = data.replace("otc_dir_", "")
+        context.user_data["otc_direction"] = direction
+        await show_otc_mtg(query, user_id)
+    elif data.startswith("otc_mtg_"):
+        # Format: otc_mtg_<mtg_choice>
+        mtg = data.replace("otc_mtg_", "")
+        context.user_data["otc_mtg"] = mtg
+        await show_otc_analysis_ready(query, user_id)
+    elif data == "otc_start_analysis":
+        await show_otc_starting(query, user_id)
     elif data == "live_market_fs":
         await show_market_fs(query, "Live Market")
     elif data == "blackout_fs":
@@ -1642,6 +1670,414 @@ async def show_live_future(query):
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+# ============================================================
+# OTC MARKET FS - Full flow: broker, time, pairs, direction, MTG, analysis
+# ============================================================
+
+async def show_otc_broker(query):
+    """Show broker selection for OTC Market FS."""
+    text = """📈 <b>OTC MARKET FS</b>
+
+👇 <b>CHOOSE BROKER</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("QUOTEX", callback_data="otc_quotex", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("BINOLLA", callback_data="otc_binolla", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def start_otc_time_input(update, context, broker):
+    """Start asking for time range - ask for start time."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    context.user_data["otc_broker"] = broker
+    text = f"""📈 <b>OTC MARKET FS</b>
+
+Broker: {"QUOTEX" if broker == "quotex" else "BINOLLA"}
+
+👇 <b>SEND START TIME</b>
+
+Format: HH:MM (e.g. 09:10)
+
+Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_OTC_START
+
+
+async def receive_otc_start_time(update, context):
+    """Receive start time, ask for end time."""
+    text = update.message.text.strip()
+    try:
+        parts = text.split(":")
+        if len(parts) != 2:
+            raise ValueError
+        h, m = int(parts[0]), int(parts[1])
+        if not (0 <= h <= 23 and 0 <= m <= 59):
+            raise ValueError
+    except (ValueError, IndexError):
+        await update.message.reply_text("Invalid format! Send HH:MM (e.g. 09:10)\n\nSend /cancel to cancel")
+        return WAITING_OTC_START
+
+    context.user_data["otc_start_time"] = text
+    await update.message.reply_text(
+        f"✅ Start time: {text}\n\n"
+        f"👇 <b>SEND END TIME</b>\n\n"
+        f"Format: HH:MM (e.g. 23:59)\n\n"
+        f"Send /cancel to cancel",
+        parse_mode=ParseMode.HTML
+    )
+    return WAITING_OTC_END
+
+
+async def receive_otc_end_time(update, context):
+    """Receive end time, show currency pairs."""
+    text = update.message.text.strip()
+    try:
+        parts = text.split(":")
+        if len(parts) != 2:
+            raise ValueError
+        h, m = int(parts[0]), int(parts[1])
+        if not (0 <= h <= 23 and 0 <= m <= 59):
+            raise ValueError
+    except (ValueError, IndexError):
+        await update.message.reply_text("Invalid format! Send HH:MM (e.g. 23:59)\n\nSend /cancel to cancel")
+        return WAITING_OTC_END
+
+    context.user_data["otc_end_time"] = text
+    broker = context.user_data.get("otc_broker", "quotex")
+    _clear_otc_selections(update.effective_user.id, broker)
+    await _send_otc_pairs_message(update, context, broker, 0)
+    return ConversationHandler.END
+
+
+def _clear_otc_selections(user_id, broker):
+    """Clear OTC pair selections."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS otc_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("DELETE FROM otc_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to clear OTC selections: {e}")
+
+
+def _get_otc_selected(user_id, broker):
+    """Get selected pairs for OTC."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS otc_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("SELECT pair_index FROM otc_selections WHERE user_id = ? AND broker = ?", (user_id, broker))
+        rows = cursor.fetchall()
+        conn.close()
+        return set(str(r[0]) for r in rows)
+    except Exception:
+        return set()
+
+
+async def _send_otc_pairs_message(update, context, broker, page):
+    """Send a new message with OTC pairs."""
+    user_id = update.effective_user.id
+    selected = _get_otc_selected(user_id, broker)
+    total_pairs = len(SIGNAL_SESSION_PAIRS)
+    total_pages = (total_pairs + PAIRS_PER_PAGE - 1) // PAIRS_PER_PAGE
+    start_idx = page * PAIRS_PER_PAGE
+    end_idx = min(start_idx + PAIRS_PER_PAGE, total_pairs)
+    page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+    start_time = context.user_data.get("otc_start_time", "")
+    end_time = context.user_data.get("otc_end_time", "")
+
+    text = f"""📈 <b>OTC MARKET FS - {broker_name}</b>
+
+Time: {start_time} - {end_time}
+
+Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
+
+👇 <b>SELECT CURRENCY PAIRS</b>"""
+    keyboard_rows = []
+    row = []
+    for i, (pair_name, payout) in enumerate(page_pairs):
+        global_idx = start_idx + i
+        is_selected = str(global_idx) in selected
+        if is_selected:
+            label = f"✅{pair_name} {payout}%"
+            style = STYLE_GREEN
+        else:
+            label = f"{pair_name} {payout}%"
+            style = _get_pair_color_style(payout)
+        row.append(InlineKeyboardButton(label, callback_data=f"otc_toggle_{broker}_{page}_{global_idx}", style=style))
+        if len(row) == 2:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+    if nav_row:
+        keyboard_rows.append(nav_row)
+
+    keyboard_rows.append([
+        InlineKeyboardButton("selectAll", callback_data="otc_select_all", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["check"]),
+    ])
+    count = len(selected)
+    keyboard_rows.append([
+        InlineKeyboardButton(f"Start ({count})", callback_data="otc_start_pairs", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"]),
+    ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_pairs(query, broker, page):
+    """Show OTC pairs page (for navigation)."""
+    user_id = query.from_user.id
+    selected = _get_otc_selected(user_id, broker)
+    total_pairs = len(SIGNAL_SESSION_PAIRS)
+    total_pages = (total_pairs + PAIRS_PER_PAGE - 1) // PAIRS_PER_PAGE
+    start_idx = page * PAIRS_PER_PAGE
+    end_idx = min(start_idx + PAIRS_PER_PAGE, total_pairs)
+    page_pairs = SIGNAL_SESSION_PAIRS[start_idx:end_idx]
+    broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
+
+    text = f"""📈 <b>OTC MARKET FS - {broker_name}</b>
+
+Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
+
+👇 <b>SELECT CURRENCY PAIRS</b>"""
+    keyboard_rows = []
+    row = []
+    for i, (pair_name, payout) in enumerate(page_pairs):
+        global_idx = start_idx + i
+        is_selected = str(global_idx) in selected
+        if is_selected:
+            label = f"✅{pair_name} {payout}%"
+            style = STYLE_GREEN
+        else:
+            label = f"{pair_name} {payout}%"
+            style = _get_pair_color_style(payout)
+        row.append(InlineKeyboardButton(label, callback_data=f"otc_toggle_{broker}_{page}_{global_idx}", style=style))
+        if len(row) == 2:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"otc_pairs_{broker}_{page-1}", style=STYLE_BLUE))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton("➡️ Next", callback_data=f"otc_pairs_{broker}_{page+1}", style=STYLE_BLUE))
+    if nav_row:
+        keyboard_rows.append(nav_row)
+
+    keyboard_rows.append([
+        InlineKeyboardButton("selectAll", callback_data="otc_select_all", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["check"]),
+    ])
+    count = len(selected)
+    keyboard_rows.append([
+        InlineKeyboardButton(f"Start ({count})", callback_data="otc_start_pairs", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"]),
+    ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def toggle_otc_pair(query, user_id, broker, page, pair_idx):
+    """Toggle a pair selection for OTC."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS otc_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        cursor.execute("SELECT 1 FROM otc_selections WHERE user_id = ? AND broker = ? AND pair_index = ?", (user_id, broker, pair_idx))
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM otc_selections WHERE user_id = ? AND broker = ? AND pair_index = ?", (user_id, broker, pair_idx))
+        else:
+            cursor.execute("INSERT INTO otc_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, pair_idx))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to toggle OTC pair: {e}")
+    await show_otc_pairs(query, broker, page)
+
+
+async def otc_select_all(query, user_id):
+    """Select all pairs for OTC then go to direction selection."""
+    msg_text = query.message.text or ""
+    broker = "quotex" if "QUOTEX" in msg_text else "binolla"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS otc_selections (user_id INTEGER, broker TEXT, pair_index INTEGER, PRIMARY KEY (user_id, broker, pair_index))")
+        for i in range(len(SIGNAL_SESSION_PAIRS)):
+            cursor.execute("INSERT OR IGNORE INTO otc_selections (user_id, broker, pair_index) VALUES (?, ?, ?)", (user_id, broker, i))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to select all OTC: {e}")
+    await show_otc_direction(query, user_id)
+
+
+async def show_otc_direction(query, user_id):
+    """Show signal direction selection (CALL / PUT / BOTH)."""
+    text = """📈 <b>OTC MARKET FS</b>
+
+👇 <b>CHOOSE SIGNAL DIRECTION</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("▲ CALL", callback_data="otc_dir_call", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("▼ PUT", callback_data="otc_dir_put", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+        ],
+        [InlineKeyboardButton("▲▼ BOTH", callback_data="otc_dir_both", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Back to Pairs", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_mtg(query, user_id):
+    """Show MTG selection for OTC (MTG1 / MTG2 / BOTH)."""
+    direction = query.message.text or ""
+    dir_name = "BOTH" if "BOTH" in direction else ("CALL" if "CALL" in direction else "PUT")
+
+    text = f"""📈 <b>OTC MARKET FS</b>
+
+Direction: {dir_name}
+
+👇 <b>CHOOSE MTG</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("MTG1", callback_data="otc_mtg_mtg1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("MTG2", callback_data="otc_mtg_mtg2", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("MTG1 + MTG2", callback_data="otc_mtg_both", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Back to Direction", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_analysis_ready(query, user_id):
+    """Show timezone info and green Start Analysis button."""
+    # Get user timezone
+    user_tz = "+00:00"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS user_timezone (user_id INTEGER PRIMARY KEY, utc_offset TEXT)")
+        cursor.execute("SELECT utc_offset FROM user_timezone WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            user_tz = row[0]
+        conn.close()
+    except Exception:
+        pass
+
+    # Get stored info from message
+    msg_text = query.message.text or ""
+    mtg_name = "MTG1 + MTG2" if "both" in msg_text.lower() else ("MTG1" if "mtg1" in msg_text.lower() else "MTG2")
+
+    text = f"""📈 <b>OTC MARKET FS - READY</b>
+
+🌐 <b>Timezone:</b> UTC {user_tz}
+⚙️ <b>MTG:</b> {mtg_name}
+
+👇 <b>PRESS TO START ANALYSIS</b>"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🟢 Start Analysis", callback_data="otc_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_otc_starting(query, user_id):
+    """Show 'Starting...' message then countdown."""
+    import asyncio
+
+    # Show "Starting..." message
+    text = """📈 <b>OTC MARKET FS</b>
+
+🚀 <b>STARTING ANALYSIS...</b>
+
+Please wait..."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⏳ Please wait...", callback_data="otc_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    await asyncio.sleep(2)
+
+    # Show 1-minute countdown
+    text = """📈 <b>OTC MARKET FS</b>
+
+⏱️ <b>ANALYSIS IN PROGRESS</b>
+
+⏳ 01:00 remaining...
+
+The bot is analyzing the market
+and generating signals."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("⏳ 01:00", callback_data="otc_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+    # Countdown loop
+    bot = query.message.get_bot()
+    chat_id = query.message.chat_id
+    message_id = query.message.message_id
+
+    for seconds in range(59, 0, -1):
+        await asyncio.sleep(1)
+        mins = seconds // 60
+        secs = seconds % 60
+        time_str = f"{mins:02d}:{secs:02d}"
+
+        countdown_text = f"""📈 <b>OTC MARKET FS</b>
+
+⏱️ <b>ANALYSIS IN PROGRESS</b>
+
+⏳ {time_str} remaining...
+
+The bot is analyzing the market
+and generating signals."""
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=countdown_text,
+                reply_markup=keyboard,
+                parse_mode=ParseMode.HTML,
+            )
+        except Exception:
+            pass
+
+    # Show final result
+    final_text = """📈 <b>OTC MARKET FS - COMPLETE</b>
+
+✅ Analysis complete!
+
+Signals have been generated.
+Good luck with your trades!"""
+    final_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, final_text, reply_markup=final_keyboard, parse_mode=ParseMode.HTML)
 
 
 # ============================================================
@@ -3760,6 +4196,19 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     application.add_handler(blackout_conversation)
+
+    otc_conversation = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(start_otc_time_input, pattern="^otc_quotex$"),
+            CallbackQueryHandler(start_otc_time_input, pattern="^otc_binolla$"),
+        ],
+        states={
+            WAITING_OTC_START: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_otc_start_time)],
+            WAITING_OTC_END: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_otc_end_time)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    application.add_handler(otc_conversation)
 
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
