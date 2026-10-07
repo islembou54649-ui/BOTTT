@@ -1313,7 +1313,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected_pairs)} pairs
         is_selected = str(global_idx) in selected_pairs
         # Only ONE checkmark in text, no icon emoji when selected
         if is_selected:
-            label = f"{e('✅')}{pair_name} {payout}%"
+            label = f"✅{pair_name} {payout}%"
             style = STYLE_GREEN
             icon_id = None  # No icon - only text checkmark
         else:
@@ -1851,7 +1851,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"{e('✅')}{pair_name} {payout}%"
+            label = f"✅{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -1906,7 +1906,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"{e('✅')}{pair_name} {payout}%"
+            label = f"✅{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -2333,7 +2333,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"{e('✅')}{pair_name} {payout}%"
+            label = f"✅{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -2388,7 +2388,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"{e('✅')}{pair_name} {payout}%"
+            label = f"✅{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -2723,7 +2723,7 @@ Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
         global_idx = start_idx + i
         is_selected = str(global_idx) in selected
         if is_selected:
-            label = f"{e('✅')}{pair_name} {payout}%"
+            label = f"✅{pair_name} {payout}%"
             style = STYLE_GREEN
         else:
             label = f"{pair_name} {payout}%"
@@ -3985,7 +3985,7 @@ signal times to your local time."""
         label = f"UTC{offset}"
         # Highlight current selection
         if user_tz == offset:
-            label = f"{e('✅')} UTC{offset}"
+            label = f"✅ UTC{offset}"
         row.append(InlineKeyboardButton(label, callback_data=f"set_tz_{offset}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["alarm"]))
         if len(row) == 3:
             keyboard_rows.append(row)
