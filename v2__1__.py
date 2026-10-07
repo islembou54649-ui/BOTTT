@@ -530,6 +530,7 @@ def get_main_menu_keyboard():
         # === Signals ===
         [
             InlineKeyboardButton("Live Signal", callback_data="live_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["lightning_premium"]),
+            InlineKeyboardButton("News Signal", callback_data="news_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
         ],
         # === Market FS + Checkers (paired by market type) ===
         [
@@ -547,10 +548,6 @@ def get_main_menu_keyboard():
         [
             InlineKeyboardButton("Axtiron FS", callback_data="axtiron_fs", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
             InlineKeyboardButton("CHK Axtiron FS", callback_data="axtiron_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
-        ],
-        # === News & Signal ===
-        [
-            InlineKeyboardButton("News Signal", callback_data="news_signal", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["sparkle_premium"]),
         ],
         # === News & Filters ===
         [
