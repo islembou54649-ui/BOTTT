@@ -153,33 +153,33 @@ _EMOJI_MAP_CACHE = {
     "✨": "5217818964612108191",  # EffectEmoji - sparkles
     "🎉": "5235711785482341993",  # SparklesEmoji - celebration
     "💎": "5465283645788937267",  # NeonEmoji - diamond
-    "📈": "5373001317042101552",  # RestrictedEmoji - chart up
+    "📈": "5197503331215361533",  # RestrictedEmoji - chart up
     "😍": "5217824874487101321",  # RestrictedEmoji - heart eyes
     "🙏": "5472189549473963781",  # RestrictedEmoji - pray
     "🚀": "5217880283860194582",  # EffectEmoji - rocket
     "🛠": "5462921117423384478",  # GameEmoji - tools
     # ALL other emojis used in bot messages
-    "⏰": "5413704112220949842",  # RestrictedEmoji - alarm
+    "⏰": "5431807687136395567",  # RestrictedEmoji - alarm
     "⏳": "5217697679030637222",  # EffectEmoji - hourglass
     "✅": "5298780919207844086",  # SparklesEmoji - check
     "✔️": "5188216731453103384",  # RestrictedEmoji - heavy check
     "❓": "5206479194388713063",  # EffectEmoji - question
     "⭐": "5267500801240092311",  # FinanceEmoji - star
     "🎁": "5411271889421086677",  # NeonEmoji - gift
-    "🎯": "5350460637182993292",  # RestrictedEmoji - target
-    "🏆": "5409008750893734809",  # RestrictedEmoji - trophy
+    "🎯": "5461009483314517035",  # RestrictedEmoji - target
+    "🏆": "5345892905103932200",  # RestrictedEmoji - trophy
     "🐾": "5188308218551475917",  # RestrictedEmoji - paw prints
     "👇": "5470177992950946662",  # RestrictedEmoji - point down
-    "👑": "5467406098367521267",  # RestrictedEmoji - crown
-    "👥": "5372926953978341366",  # RestrictedEmoji - busts
+    "👑": "5348306023889254367",  # RestrictedEmoji - crown
+    "👥": "5190806721286657692",  # RestrictedEmoji - busts
     "💡": "5193127592764394874",  # EffectEmoji - light bulb
     "💰": "5456319774164269402",  # GlowingFont - money bag
     "💳": "5267300544094948794",  # SparklesEmoji - credit card
-    "📅": "5364233403300330811",  # TopicIcons - calendar
+    "📅": "5192784923093652913",  # TopicIcons - calendar
     "📋": "5334882760735598374",  # EMOJI_IDS clipboard fallback
     "📌": "5397782960512444700",  # NewsEmoji - pushpin
     "📰": "5433982607035474385",  # RestrictedEmoji - newspaper
-    "🔔": "5242628160297641831",  # RestrictedEmoji - bell
+    "🔔": "5361643005444899140",  # RestrictedEmoji - bell
     "🔥": "5220166546491459639",  # EffectEmoji - fire
     "🔵": "5375129357373165375",  # EMOJI_IDS link fallback
     "🕊": "5434121252874756456",  # RestrictedEmoji - dove
@@ -193,7 +193,7 @@ _EMOJI_MAP_CACHE = {
     "🪪": "5422683699130933153",  # RestrictedEmoji - ID card
     "👤": "5373012449597335010",  # RestrictedEmoji - person
     "🤖": "5372981976804366741",  # RestrictedEmoji - robot
-    "📊": "5431577498364158238",  # RestrictedEmoji - bar chart
+    "📊": "5190806721286657692",  # RestrictedEmoji - bar chart
     # Fallback emojis (emojis not in standard sets)
     "⏹️": "5462921117423384478",  # tools fallback
     "⏹": "5462921117423384478",   # tools fallback
@@ -202,7 +202,7 @@ _EMOJI_MAP_CACHE = {
     "⌛": "5386367538735104399",  # NewsEmoji - hourglass done
     "⏱️": "5350438526691326210",  # TopicIcons - stopwatch
     "⏸️": "5462921117423384478",  # tools fallback
-    "⚙️": "5341715473882955310",  # NewsEmoji - gear
+    "⚙️": "5267334530171169409",  # LoveDayEmoji - gear (animated, colorful)
     "⚠️": "5431445849026611010",  # CuteEmoji - warning
     "❌": "5465665476971471368",  # RestrictedEmoji - cross
     "❤️": "5449505950283078474",  # RestrictedEmoji - heart
@@ -210,7 +210,7 @@ _EMOJI_MAP_CACHE = {
     "➖": "5418206758365574104",  # GlowingFont - minus
     "🆓": "5364112491381006601",  # RestrictedEmoji - free
     "🌀": "5429187589582111255",  # CuteEmoji - swirl
-    "🌐": "5447410659077661506",  # NewsEmoji - globe
+    "🌐": "5395330710280093235",  # NewsEmoji - globe
     "🐛": "5397991236361527676",  # RestrictedEmoji - bug
     "💲": "5373350287429872269",  # NeonEmoji - dollar
     "📆": "5431897022456145283",  # RestrictedEmoji - calendar
@@ -220,8 +220,8 @@ _EMOJI_MAP_CACHE = {
     "📣": "5469903029144657419",  # RestrictedEmoji - megaphone
     "📤": "5433614747381538714",  # RestrictedEmoji - outbox
     "🔄": "5264727218734524899",  # RestrictedEmoji - arrows
-    "🔍": "5188217332748527444",  # RestrictedEmoji - magnifier
-    "🔒": "5348223165380179822",  # TopicIcons - lock
+    "🔍": "5231012545799666522",  # RestrictedEmoji - magnifier
+    "🔒": "5206432422194849059",  # TopicIcons - lock
     "🔗": "5375129357373165375",  # RestrictedEmoji - link
     "🔮": "5361837567463399422",  # RestrictedEmoji - crystal ball
     "🛑": "5413610645142642221",  # BubbleEmoji - stop
