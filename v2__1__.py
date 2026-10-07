@@ -3145,7 +3145,7 @@ async def show_my_account(query, user_id):
 
 🏆 <b>ACHIEVEMENTS:</b>
 {e('✅')} <b>Bot Member</b>
-{f'{e(\'⏳\')} <b>Not Subscribed</b>' if not is_premium else f'{e(\'✅\')} <b>VIP Subscriber</b>'}  {f'{e(\'⏳\')} <b>No Referrals</b>' if ref_count == 0 else f'{e(\'✅\')} <b>Has Referrals</b>'}"""
+{e('⏳') + ' <b>Not Subscribed</b>' if not is_premium else e('✅') + ' <b>VIP Subscriber</b>'}  {e('⏳') + ' <b>No Referrals</b>' if ref_count == 0 else e('✅') + ' <b>Has Referrals</b>'}"""
     await safe_edit_message(query, text, reply_markup=get_back_keyboard(), parse_mode=ParseMode.HTML)
 
 async def show_support(query):
