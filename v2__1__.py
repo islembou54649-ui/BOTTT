@@ -529,7 +529,6 @@ def get_main_menu_keyboard():
         ],
         # === Signals ===
         [
-            InlineKeyboardButton("Current Signals", callback_data="current_signals", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
             InlineKeyboardButton("Live Future", callback_data="live_future", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["target_check"]),
         ],
         [
@@ -543,6 +542,7 @@ def get_main_menu_keyboard():
         ],
         [
             InlineKeyboardButton("Blackout Checker", callback_data="blackout_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
+            InlineKeyboardButton("CHK Axtiron FS", callback_data="axtiron_checker", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["magnifier"]),
         ],
         # === Market Future Signals (FS) ===
         [
@@ -578,6 +578,10 @@ def get_main_menu_keyboard():
         [
             InlineKeyboardButton("Upgrade", callback_data="upgrade", style=STYLE_BLUE, icon_custom_emoji_id="5217880283860194582"),
             InlineKeyboardButton("Free Bots", callback_data="free_bots", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["gift"]),
+        ],
+        # === Promo Code ===
+        [
+            InlineKeyboardButton("Promo Code", callback_data="promo_code", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["gift"]),
         ],
         # === Misc ===
         [
@@ -702,7 +706,7 @@ def get_upgrade_keyboard():
 # ============================================================
 # 4) HANDLERS
 # ============================================================
-WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK, WAITING_LIVE_CHK, WAITING_BLK_CHK = range(11)
+WAITING_SIGNAL_INPUT, WAITING_BROADCAST, WAITING_SESSION_START, WAITING_SESSION_END, WAITING_BLACKOUT_START, WAITING_BLACKOUT_END, WAITING_OTC_START, WAITING_OTC_END, WAITING_OTC_CHK, WAITING_LIVE_CHK, WAITING_BLK_CHK, WAITING_AXTIRON_CHK, WAITING_PROMO = range(13)
 
 async def safe_edit_message(query, text, reply_markup=None, parse_mode=None):
     """Edit message safely - handle 'Message is not modified' error."""
@@ -937,6 +941,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parts = data.replace("blk_chk_mtg_", "").split("_")
         if len(parts) == 3:
             await show_blackout_chk_scan(query, parts[0], parts[1], parts[2])
+    elif data == "axtiron_checker":
+        await show_axtiron_chk_time_input(update, context)
+    elif data.startswith("axtiron_chk_day_"):
+        await show_axtiron_chk_mtg(query, data.replace("axtiron_chk_day_", ""))
+    elif data.startswith("axtiron_chk_mtg_"):
+        parts = data.replace("axtiron_chk_mtg_", "").split("_")
+        if len(parts) == 2:
+            await show_axtiron_chk_scan(query, parts[0], parts[1])
+    elif data == "promo_code":
+        await show_promo_code_input(update, context)
     elif data == "otc_market_fs":
         await show_otc_broker(query)
     elif data == "otc_quotex":
@@ -4386,6 +4400,274 @@ Please wait..."""
     await safe_edit_message(query, result_text, reply_markup=result_keyboard, parse_mode=ParseMode.HTML)
 
 
+# ============================================================
+# AXTIRON CHECKER (CHK Axtiron FS) - No broker, direct time list, day, MTG, scan results
+# ============================================================
+
+async def show_axtiron_chk_time_input(update, context):
+    """Ask user to send time list for Axtiron Checker (no broker)."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    text = f"""{e('🐾')} {to_bold_italic('AXTIRON CHECKER')}
+
+👇 {to_bold('SEND TIME LIST')}
+
+Send the time list to check signal results.
+Example: 09:15, 10:32, 11:07, 13:45
+
+Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_AXTIRON_CHK
+
+
+async def receive_axtiron_chk_time_list(update, context):
+    """Receive time list, show day selection."""
+    text = update.message.text.strip()
+    import re as _re
+    times = _re.findall(r'\d{1,2}:\d{2}', text)
+    if not times:
+        await update.message.reply_text("No valid times found! Send times like: 09:15, 10:32, 11:07\n\nSend /cancel to cancel")
+        return WAITING_AXTIRON_CHK
+
+    context.user_data["axtiron_chk_times"] = times
+    num_times = len(times)
+
+    await update.message.reply_text(
+        f"{e('✅')} {to_bold(str(num_times))} {to_bold('times received')}\n\n"
+        f"👇 {to_bold('CHOOSE DAY')}",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Today", callback_data="axtiron_chk_day_today", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["calendar_premium"]),
+                InlineKeyboardButton("Yesterday", callback_data="axtiron_chk_day_yesterday", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["calendar_premium"]),
+            ],
+            [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+        ])
+    )
+    return ConversationHandler.END
+
+
+async def show_axtiron_chk_mtg(query, day):
+    """Show MTG selection for Axtiron Checker."""
+    day_name = "Today" if day == "today" else "Yesterday"
+    text = f"""{e('🐾')} {to_bold_italic('AXTIRON CHECKER')}
+
+{e('📅')} {to_bold('DAY')}: {to_bold(day_name)}
+
+👇 {to_bold('CHOOSE MTG')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("MTG1", callback_data=f"axtiron_chk_mtg_mtg1_{day}", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("MTG2", callback_data=f"axtiron_chk_mtg_mtg2_{day}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("MTG1 + MTG2", callback_data=f"axtiron_chk_mtg_both_{day}", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+async def show_axtiron_chk_scan(query, mtg, day):
+    """Show scanning message then results."""
+    import asyncio
+    import random as _random
+
+    text = f"""{e('🐾')} {to_bold_italic('AXTIRON CHECKER')}
+
+{e('⏳')} {to_bold('SCANNING RESULTS...')}
+
+Please wait..."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Please wait...", callback_data="axtiron_chk_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    await asyncio.sleep(2)
+
+    day_name = "Today" if day == "today" else "Yesterday"
+    mtg_name = "MTG1 + MTG2" if mtg == "both" else mtg.upper()
+
+    # Generate random results for pairs (mix of OTC and Live)
+    results_lines = []
+    pairs_pool = list(SIGNAL_SESSION_PAIRS[:8]) + list(LIVE_MARKET_PAIRS[:7])
+    for pair_name, payout in pairs_pool:
+        pair_clean = pair_name.replace(" OTC", "").replace(" ", "").replace("/", "")
+        result = _random.choice(["WIN", "WIN", "WIN", "LOSS", "PENDING"])
+        if result == "WIN":
+            status_emoji = "✔️"
+            status_text = to_bold("WIN")
+        elif result == "LOSS":
+            status_emoji = "✖️"
+            status_text = to_bold("LOSS")
+        else:
+            status_emoji = "👀"
+            status_text = to_bold("PENDING")
+        bold_pair = to_bold(pair_clean)
+        results_lines.append(f"{bold_pair}  {status_emoji} {status_text}")
+
+    results_text = "\n".join(results_lines)
+    wins = sum(1 for l in results_lines if "WIN" in l)
+    losses = sum(1 for l in results_lines if "LOSS" in l)
+    pending = sum(1 for l in results_lines if "PENDING" in l)
+
+    result_text = f"""{e('🐾')} {to_bold_italic('AXTIRON CHECKER - RESULTS')}
+
+{e('📅')} {to_bold('DAY')}: {to_bold(day_name)}
+{e('⚙️')} {to_bold('MTG')}: {to_bold(mtg_name)}
+
+━━━━━━━ • ━━━━━━━
+{results_text}
+━━━━━━━ • ━━━━━━━
+
+{e('✅')} {to_bold('WINS')}: {to_bold(str(wins))}  {e('❌')} {to_bold('LOSSES')}: {to_bold(str(losses))}  {e('👀')} {to_bold('PENDING')}: {to_bold(str(pending))}"""
+
+    result_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, result_text, reply_markup=result_keyboard, parse_mode=ParseMode.HTML)
+
+
+# ============================================================
+# PROMO CODE - Enter code, validate, show reward
+# ============================================================
+
+# Promo codes dict - format: "CODE": (reward_type, reward_value, reward_description)
+# reward_type: "premium_days", "signals", "discount", "gift"
+PROMO_CODES = {
+    "QUANTVEXA2025": ("premium_days", 7, "7 Days Premium Access"),
+    "AXTIRON100": ("signals", 100, "100 Bonus Signals"),
+    "BLACKOUT50": ("signals", 50, "50 Bonus Signals"),
+    "LUNA2025": ("premium_days", 30, "30 Days Premium Access"),
+    "QUANTUMVIP": ("discount", 50, "50% Discount on Gold Plan"),
+    "FREESTART": ("signals", 25, "25 Bonus Signals"),
+    "QUOTEX10": ("signals", 10, "10 Bonus Signals"),
+    "BINOLLA20": ("signals", 20, "20 Bonus Signals"),
+}
+
+
+async def show_promo_code_input(update, context):
+    """Ask user to send promo code."""
+    query = update.callback_query
+    try:
+        await query.answer()
+    except Exception:
+        pass
+    text = f"""{e('🎁')} {to_bold_italic('PROMO CODE')}
+
+👇 {to_bold('ENTER YOUR PROMO CODE')}
+
+Send your promo code to claim your reward.
+Example: QUANTVEXA2025
+
+Send /cancel to cancel"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    return WAITING_PROMO
+
+
+async def receive_promo_code(update, context):
+    """Receive promo code, validate, show reward message."""
+    code = update.message.text.strip().upper()
+    user_id = update.effective_user.id
+    first_name = update.effective_user.first_name or "Trader"
+
+    # Check if code is valid
+    if code in PROMO_CODES:
+        reward_type, reward_value, reward_desc = PROMO_CODES[code]
+
+        # Reward emoji and label based on type
+        if reward_type == "premium_days":
+            reward_icon = "👑"
+            reward_label = to_bold("PREMIUM ACCESS")
+            reward_detail = f"{to_bold(str(reward_value))} {to_bold('DAYS')}"
+        elif reward_type == "signals":
+            reward_icon = "📈"
+            reward_label = to_bold("BONUS SIGNALS")
+            reward_detail = f"{to_bold(str(reward_value))} {to_bold('SIGNALS')}"
+        elif reward_type == "discount":
+            reward_icon = "💎"
+            reward_label = to_bold("DISCOUNT")
+            reward_detail = f"{to_bold(str(reward_value))}% {to_bold('OFF')}"
+        else:
+            reward_icon = "🎁"
+            reward_label = to_bold("REWARD")
+            reward_detail = to_bold(reward_desc)
+
+        # Save redeemed code to database to prevent reuse
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute("""CREATE TABLE IF NOT EXISTS redeemed_promo_codes
+                              (user_id INTEGER, code TEXT, redeemed_at TEXT,
+                               PRIMARY KEY (user_id, code))""")
+            cursor.execute("SELECT 1 FROM redeemed_promo_codes WHERE user_id = ? AND code = ?", (user_id, code))
+            if cursor.fetchone():
+                conn.close()
+                text = f"""{e('⚠️')} {to_bold_italic('PROMO CODE')}
+
+{e('❌')} {to_bold('CODE ALREADY REDEEMED')}
+
+You have already used this code: {to_bold(code)}
+
+{e('💡')} Each promo code can only be used once."""
+                keyboard = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+                ])
+                await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+                return ConversationHandler.END
+
+            cursor.execute("INSERT INTO redeemed_promo_codes VALUES (?, ?, ?)",
+                           (user_id, code, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            conn.commit()
+            conn.close()
+        except Exception as ex:
+            logging.warning(f"Failed to save promo code redemption: {ex}")
+
+        text = f"""{e('🎉')} {to_bold_italic('PROMO CODE REDEEMED!')}
+
+{e('👤')} {to_bold('USER')}: {to_bold(first_name)}
+{e('🎫')} {to_bold('CODE')}: {to_bold(code)}
+
+━━━━━━━ • ━━━━━━━
+{e(reward_icon)} {reward_label}
+{reward_detail}
+━━━━━━━ • ━━━━━━━
+
+{e('✅')} {to_bold(reward_desc)}
+
+{e('💎')} {to_bold('Your reward has been credited to your account')}
+
+{e('🚀')} {to_bold_italic('ENJOY YOUR REWARD!')}"""
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["house"])],
+        ])
+        await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    else:
+        # Invalid code
+        text = f"""{e('⚠️')} {to_bold_italic('PROMO CODE')}
+
+{e('❌')} {to_bold('INVALID PROMO CODE')}
+
+The code you entered is not valid: {to_bold(code)}
+
+{e('💡')} Please check the code and try again.
+
+Send another code or /cancel to cancel"""
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+        ])
+        await update.message.reply_text(text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+        return WAITING_PROMO
+
+    return ConversationHandler.END
+
+
 async def show_checker(query, checker_name):
     text = f"""
 {e('🔍')} {checker_name.upper()}
@@ -5193,6 +5475,24 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     application.add_handler(blk_chk_conversation)
+
+    axtiron_chk_conversation = ConversationHandler(
+        entry_points=[CallbackQueryHandler(show_axtiron_chk_time_input, pattern="^axtiron_checker$")],
+        states={
+            WAITING_AXTIRON_CHK: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_axtiron_chk_time_list)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    application.add_handler(axtiron_chk_conversation)
+
+    promo_code_conversation = ConversationHandler(
+        entry_points=[CallbackQueryHandler(show_promo_code_input, pattern="^promo_code$")],
+        states={
+            WAITING_PROMO: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_promo_code)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    application.add_handler(promo_code_conversation)
 
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(ChatMemberHandler(track_channel_join, ChatMemberHandler.CHAT_MEMBER))
