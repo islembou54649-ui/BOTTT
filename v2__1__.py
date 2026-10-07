@@ -1477,17 +1477,17 @@ async def start_signal_session_analysis(query, user_id, mtg_level, duration="1M"
 
     pairs_count = len(selected_pairs)
     broker_name = "QUOTEX" if broker == "quotex" else "BINOLLA"
-    text = f"""{emj('check', '✅')} 𝚂𝙴𝚂𝚂𝙸𝙾𝙽 𝚂𝚃𝙰𝚁𝚃𝙴𝙳!
+    text = f"""{e('✅')} {to_bold_italic('SESSION STARTED!')}
 
-{emj('lightning', '⚡')} MTG Level: MTG{mtg_level}
-{emj('clock', '⏰')} Duration: {duration}
-{emj('stats', '📊')} Broker: {broker_name}
-{emj('chart', '📈')} Selected Pairs: {pairs_count}
+{e('⚡')} {to_bold('MTG LEVEL')}: {to_bold(f'MTG{mtg_level}')}
+{e('⌛')} {to_bold('DURATION')}: {to_bold(duration)}
+{e('📊')} {to_bold('BROKER')}: {to_bold(broker_name)}
+{e('📈')} {to_bold('SELECTED PAIRS')}: {to_bold(str(pairs_count))}
 
-💡 The bot will now start sending
-trading signals for your selected pairs.
+{e('💎')} {to_bold('The bot will now start sending')}
+{to_bold('trading signals for your selected pairs.')}
 
-{emj('clock', '⏰')} Session started at: {datetime.now().strftime('%H:%M:%S')}"""
+{e('⌛')} {to_bold('STARTED AT')}: {to_bold(datetime.now().strftime('%H:%M:%S'))}"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
@@ -2538,26 +2538,33 @@ async def show_blackout_final(query, user_id, analysis_type, duration, mtg_level
     # Sort by time
     signals.sort(key=lambda x: x.split()[-1])
 
-    signals_text = "\n".join(signals)
+    # Build signal lines with bold Unicode
+    signal_lines = []
+    for _, pair_clean, h, m, sig_dir in signals:
+        bold_pair = to_bold(pair_clean)
+        bold_time = to_bold(f"{h:02d}:{m:02d}")
+        signal_lines.append(f"{e('⚡')} {to_bold(duration)} {bold_pair} {bold_time}")
+    signals_text = "\n".join(signal_lines)
+
     today = datetime.now().strftime("%Y-%m-%d")
     analysis_name = "Hybrid" if analysis_type == "hybrid" else "High"
 
-    text = f"""🚀 𝚀𝚄𝙰𝙽𝚃𝙴𝚇 𝙱𝙾𝚃 𝙵𝚄𝚃𝚄𝚁𝙴 🚀
+    text = f"""{e('🚀')} {to_bold_italic('QUANTEX BOT FUTURE')} {e('🚀')}
 
-📆 {today}
+{e('📅')} {to_bold(today)}
 
-🔻Timezone: UTC {user_tz} 🇧🇩
-⚙️MODE : BLACKOUT FS
-⚡️FILTER : MTG {mtg_level}
+{e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)} 🇧🇩
+{e('⚙️')} {to_bold('MODE')}: {to_bold('BLACKOUT FS')}
+{e('⚡')} {to_bold('FILTER')}: MTG {to_bold(str(mtg_level))}
 
-⌛️TIMEFRAME: {duration}
-🔸 BACK-TESTED ✔️
+{e('⌛')} {to_bold('TIMEFRAME')}: {to_bold(duration)}
+{e('✨')} {to_bold('BACK-TESTED')} ✔️
 
 ━━━━━━━ • ━━━━━━━
 {signals_text}
 ━━━━━━━ • ━━━━━━━
 
-📶USE SAFETY FOR BETTER RESULT 🔥"""
+{e('💎')} {to_bold('USE SAFETY FOR BETTER RESULT')} 🔥"""
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
@@ -2807,29 +2814,34 @@ your premium future signals."""
             direction = _random.choice(["CALL", "PUT"])
             # Format pair name: remove spaces and slash, add -OTC
             pair_clean = pair_name.replace(" ", "").replace("/", "")
-            signals.append(f"🚨 M1 {pair_clean} {h:02d}:{m:02d} {direction}")
+            bold_pair = to_bold(pair_clean)
+            bold_time = to_bold(f"{h:02d}:{m:02d}")
+            bold_dir = to_bold(direction)
+            signals.append(f"{e('⚡')} {to_bold('M1')} {bold_pair} {bold_time} {bold_dir}")
 
         # Sort by time
         signals.sort(key=lambda x: x.split()[-2])
         signals_text = "\n".join(signals)
 
-        result_text = f"""🐾𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗙𝗨𝗧𝗨𝗥𝗘 𝗕𝗬 𝗔𝗫𝗧𝗜𝗥𝗢𝗡🐾
+        result_text = f"""🐾 {to_bold_italic('PREMIUM FUTURE BY AXTIRON')} 🐾
 
-⚙️𝗩𝗘𝗥𝗦𝗜𝗢𝗡 𝟮 | 𝗠𝗢𝗗𝗘 : 𝗟𝗨𝗡𝗔
-🌐𝗧𝗜𝗠𝗘𝗭𝗢𝗡𝗘 : UTC {user_tz}
+{e('⚙️')} {to_bold('VERSION 2')} | {to_bold('MODE')}: {to_bold('LUNA')}
+{e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)}
 
+━━━━━━━ • ━━━━━━━
 {signals_text}
+━━━━━━━ • ━━━━━━━
 
-🦌𝗘𝗡𝗚𝗜𝗡𝗘𝗘𝗥𝗘𝗗 𝗧𝗢 𝗗𝗢𝗠𝗜𝗡𝗔𝗧𝗘🕊"""
+🦌 {to_bold_italic('ENGINEERED TO DOMINATE')} 🕊"""
 
         await bot.send_message(chat_id=chat_id, text=result_text, parse_mode=ParseMode.HTML)
         await asyncio.sleep(0.5)  # Small delay between messages
 
     # Send final message with back button
-    final_text = """🐾 <b>AXTIRON FS - COMPLETE</b>
+    final_text = f"""🐾 {to_bold_italic('AXTIRON FS - COMPLETE')} 🐾
 
-All signals have been generated.
-Good luck with your trades! 🦌"""
+{e('✅')} {to_bold('All signals have been generated.')}
+{e('💎')} {to_bold('Good luck with your trades!')} 🦌"""
     final_keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
@@ -3630,17 +3642,17 @@ async def show_live_signal_final(query, broker, market, duration, bot_type):
     bot_names = {"strong": "Strong Bot", "medium": "Medium Bot", "hybrid": "Hybrid Bot"}
     bot_name = bot_names.get(bot_type, bot_type)
 
-    text = f"""{emj('check', '✅')} <b>LIVE SIGNAL CONFIGURED</b>
+    text = f"""{e('✅')} {to_bold_italic('LIVE SIGNAL CONFIGURED')}
 
-Broker: {broker_name}
-Market: {market_name}
-Duration: {duration}
-Bot Type: {bot_name}
+{e('📊')} {to_bold('BROKER')}: {to_bold(broker_name)}
+{e('🌐')} {to_bold('MARKET')}: {to_bold(market_name)}
+{e('⌛')} {to_bold('DURATION')}: {to_bold(duration)}
+{e('🤖')} {to_bold('BOT TYPE')}: {to_bold(bot_name)}
 
-The bot will select the best currency pairs
-and send you live signals automatically.
+{e('💎')} {to_bold('The bot will select the best currency pairs')}
+{to_bold('and send you live signals automatically.')}
 
-{emj('lightning_premium', '⚡')} Signals are coming soon - under development"""
+{e('⚡')} {to_bold('Signals are coming soon - under development')}"""
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
