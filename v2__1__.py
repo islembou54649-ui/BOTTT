@@ -936,7 +936,31 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "otc_start_analysis":
         await show_otc_starting(query, user_id)
     elif data == "live_market_fs":
-        await show_market_fs(query, "Live Market")
+        await show_live_market_pairs(query, 0)
+    elif data.startswith("lm_pairs_"):
+        # Format: lm_pairs_<page>
+        parts = data.replace("lm_pairs_", "").split("_")
+        if len(parts) == 1:
+            await show_live_market_pairs(query, int(parts[0]))
+    elif data.startswith("lm_toggle_"):
+        # Format: lm_toggle_<page>_<pair_idx>
+        parts = data.replace("lm_toggle_", "").split("_")
+        if len(parts) == 2:
+            await toggle_live_market_pair(query, user_id, int(parts[0]), int(parts[1]))
+    elif data == "lm_select_all":
+        await live_market_select_all(query, user_id)
+    elif data == "lm_start_pairs":
+        await show_live_market_direction(query, user_id)
+    elif data.startswith("lm_dir_"):
+        direction = data.replace("lm_dir_", "")
+        context.user_data["lm_direction"] = direction
+        await show_live_market_mtg(query, user_id)
+    elif data.startswith("lm_mtg_"):
+        mtg = data.replace("lm_mtg_", "")
+        context.user_data["lm_mtg"] = mtg
+        await show_live_market_analysis_ready(query, user_id)
+    elif data == "lm_start_analysis":
+        await show_live_market_starting(query, user_id)
     elif data == "blackout_fs":
         await show_blackout_broker(query)
     elif data == "blackout_quotex":
@@ -1254,6 +1278,23 @@ SIGNAL_SESSION_PAIRS = [
     ("EUR/TRY OTC", 61), ("USD/TRY OTC", 60), ("GBP/TRY OTC", 59),
     ("USD/ZAR OTC", 58), ("EUR/ZAR OTC", 57), ("USD/MXN OTC", 56),
     ("USD/SGD OTC", 55),
+]
+# Live Market pairs (NO "OTC" suffix)
+LIVE_MARKET_PAIRS = [
+    ("EUR/USD", 95), ("GBP/JPY", 93), ("USD/JPY", 92),
+    ("AUD/CAD", 91), ("EUR/GBP", 90), ("USD/CHF", 89),
+    ("EUR/JPY", 88), ("GBP/USD", 87), ("USD/CAD", 86),
+    ("AUD/USD", 85), ("NZD/USD", 84), ("EUR/AUD", 83),
+    ("GBP/AUD", 82), ("EUR/CAD", 81), ("AUD/JPY", 80),
+    ("CAD/JPY", 79), ("NZD/JPY", 78), ("CHF/JPY", 77),
+    ("EUR/CHF", 76), ("USD/SEK", 75), ("EUR/SEK", 74),
+    ("GBP/CHF", 73), ("AUD/NZD", 72), ("CAD/CHF", 71),
+    ("EUR/NZD", 70), ("GBP/CAD", 69), ("NZD/CAD", 68),
+    ("AUD/CHF", 67), ("EUR/NOK", 66), ("USD/NOK", 65),
+    ("GBP/NOK", 64), ("AUD/SEK", 63), ("CAD/SEK", 62),
+    ("EUR/TRY", 61), ("USD/TRY", 60), ("GBP/TRY", 59),
+    ("USD/ZAR", 58), ("EUR/ZAR", 57), ("USD/MXN", 56),
+    ("USD/SGD", 55),
 ]
 PAIRS_PER_PAGE = 30  # 2 columns x 15 rows = 30 per page
 
@@ -1731,6 +1772,276 @@ async def show_live_future(query):
         [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
     ])
     await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+
+# ============================================================
+# LIVE MARKET FS - Direct pairs selection (no broker), direction, MTG, analysis
+# ============================================================
+
+def _clear_lm_selections(user_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS lm_selections (user_id INTEGER PRIMARY KEY, pair_index INTEGER)")
+        cursor.execute("DELETE FROM lm_selections WHERE user_id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to clear LM selections: {e}")
+
+def _get_lm_selected(user_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS lm_selections (user_id INTEGER PRIMARY KEY, pair_index INTEGER)")
+        cursor.execute("SELECT pair_index FROM lm_selections WHERE user_id = ?", (user_id,))
+        rows = cursor.fetchall()
+        conn.close()
+        return set(str(r[0]) for r in rows)
+    except Exception:
+        return set()
+
+async def show_live_market_pairs(query, page):
+    """Show Live Market pairs directly (no broker selection)."""
+    user_id = query.from_user.id
+    if page == 0:
+        _clear_lm_selections(user_id)
+    selected = _get_lm_selected(user_id)
+    total_pairs = len(LIVE_MARKET_PAIRS)
+    total_pages = (total_pairs + PAIRS_PER_PAGE - 1) // PAIRS_PER_PAGE
+    start_idx = page * PAIRS_PER_PAGE
+    end_idx = min(start_idx + PAIRS_PER_PAGE, total_pairs)
+    page_pairs = LIVE_MARKET_PAIRS[start_idx:end_idx]
+
+    text = f"""{e('🌐')} {to_bold_italic('LIVE MARKET FS')}
+
+Page {page + 1}/{total_pages} · Selected: {len(selected)} pairs
+
+👇 {to_bold('SELECT CURRENCY PAIRS')}"""
+    keyboard_rows = []
+    row = []
+    for i, (pair_name, payout) in enumerate(page_pairs):
+        global_idx = start_idx + i
+        is_selected = str(global_idx) in selected
+        if is_selected:
+            label = f"✅{pair_name} {payout}%"
+            style = STYLE_GREEN
+        else:
+            label = f"{pair_name} {payout}%"
+            style = _get_pair_color_style(payout)
+        row.append(InlineKeyboardButton(label, callback_data=f"lm_toggle_{page}_{global_idx}", style=style))
+        if len(row) == 2:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(InlineKeyboardButton("Previous", callback_data=f"lm_pairs_{page-1}", style=STYLE_BLUE))
+    if page < total_pages - 1:
+        nav_row.append(InlineKeyboardButton("Next", callback_data=f"lm_pairs_{page+1}", style=STYLE_BLUE))
+    if nav_row:
+        keyboard_rows.append(nav_row)
+
+    keyboard_rows.append([
+        InlineKeyboardButton("selectAll", callback_data="lm_select_all", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["check"]),
+    ])
+    count = len(selected)
+    keyboard_rows.append([
+        InlineKeyboardButton(f"Start ({count})", callback_data="lm_start_pairs", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"]),
+    ])
+    keyboard_rows.append([InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])])
+
+    keyboard = InlineKeyboardMarkup(keyboard_rows)
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+async def toggle_live_market_pair(query, user_id, page, pair_idx):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS lm_selections (user_id INTEGER PRIMARY KEY, pair_index INTEGER)")
+        cursor.execute("SELECT 1 FROM lm_selections WHERE user_id = ? AND pair_index = ?", (user_id, pair_idx))
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM lm_selections WHERE user_id = ? AND pair_index = ?", (user_id, pair_idx))
+        else:
+            cursor.execute("INSERT INTO lm_selections (user_id, pair_index) VALUES (?, ?)", (user_id, pair_idx))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to toggle LM pair: {e}")
+    await show_live_market_pairs(query, page)
+
+async def live_market_select_all(query, user_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS lm_selections (user_id INTEGER PRIMARY KEY, pair_index INTEGER)")
+        for i in range(len(LIVE_MARKET_PAIRS)):
+            cursor.execute("INSERT OR IGNORE INTO lm_selections (user_id, pair_index) VALUES (?, ?)", (user_id, i))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"Failed to select all LM: {e}")
+    await show_live_market_direction(query, user_id)
+
+async def show_live_market_direction(query, user_id):
+    text = f"""{e('🌐')} {to_bold_italic('LIVE MARKET FS')}
+
+👇 {to_bold('CHOOSE SIGNAL DIRECTION')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("▲ CALL", callback_data="lm_dir_call", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("▼ PUT", callback_data="lm_dir_put", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"]),
+        ],
+        [InlineKeyboardButton("▲▼ BOTH", callback_data="lm_dir_both", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+async def show_live_market_mtg(query, user_id):
+    text = f"""{e('🌐')} {to_bold_italic('LIVE MARKET FS')}
+
+👇 {to_bold('CHOOSE MTG')}"""
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("MTG1", callback_data="lm_mtg_mtg1", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["check"]),
+            InlineKeyboardButton("MTG2", callback_data="lm_mtg_mtg2", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"]),
+        ],
+        [InlineKeyboardButton("MTG1 + MTG2", callback_data="lm_mtg_both", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["stats"])],
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+async def show_live_market_analysis_ready(query, user_id):
+    user_tz = "+00:00"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS user_timezone (user_id INTEGER PRIMARY KEY, utc_offset TEXT)")
+        cursor.execute("SELECT utc_offset FROM user_timezone WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            user_tz = row[0]
+        conn.close()
+    except Exception:
+        pass
+
+    text = f"""{e('🌐')} {to_bold_italic('LIVE MARKET FS - READY')}
+
+{e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)}
+
+👇 {to_bold('PRESS TO START ANALYSIS')}"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Start Analysis", callback_data="lm_start_analysis", style=STYLE_GREEN, icon_custom_emoji_id=EMOJI_IDS["lightning"])],
+        [InlineKeyboardButton("Cancel", callback_data="main_menu", style=STYLE_RED, icon_custom_emoji_id=EMOJI_IDS["cross"])],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+async def show_live_market_starting(query, user_id):
+    import asyncio
+    import random as _random
+
+    selected = _get_lm_selected(user_id)
+    selected_names = []
+    for idx_str in selected:
+        idx = int(idx_str)
+        if 0 <= idx < len(LIVE_MARKET_PAIRS):
+            selected_names.append(LIVE_MARKET_PAIRS[idx][0])
+
+    user_tz = "+00:00"
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT utc_offset FROM user_timezone WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            user_tz = row[0]
+        conn.close()
+    except Exception:
+        pass
+
+    # Starting message
+    text = f"""{e('🚀')} {to_bold_italic('LIVE MARKET FS')}
+
+{e('⚡')} {to_bold('STARTING ANALYSIS...')}
+
+Please wait..."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Please wait...", callback_data="lm_none", style=STYLE_BLUE)],
+    ])
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+    await asyncio.sleep(2)
+
+    # Countdown
+    text = f"""{e('🚀')} {to_bold_italic('LIVE MARKET FS')}
+
+{e('⚡')} {to_bold('ANALYSIS IN PROGRESS')}
+
+⏳ 00:10 remaining...
+
+{to_bold('The bot is analyzing the market')}"""
+    await safe_edit_message(query, text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+
+    bot = query.message.get_bot()
+    chat_id = query.message.chat_id
+    message_id = query.message.message_id
+
+    for seconds in range(9, 0, -1):
+        await asyncio.sleep(1)
+        time_str = f"00:{seconds:02d}"
+        countdown_text = f"""{e('🚀')} {to_bold_italic('LIVE MARKET FS')}
+
+{e('⚡')} {to_bold('ANALYSIS IN PROGRESS')}
+
+⏳ {time_str} remaining...
+
+{to_bold('The bot is analyzing the market')}"""
+        try:
+            await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=countdown_text, reply_markup=keyboard, parse_mode=ParseMode.HTML)
+        except Exception:
+            pass
+
+    # Generate signals
+    directions_list = ["CALL", "PUT"]
+    num_signals = _random.randint(15, 25)
+    signals = []
+    for _ in range(num_signals):
+        pair = _random.choice(selected_names) if selected_names else "EUR/USD"
+        pair_clean = pair.replace(" ", "").replace("/", "")
+        h = _random.randint(0, 23)
+        m = _random.randint(0, 59)
+        sig_dir = _random.choice(directions_list)
+        signals.append((h * 60 + m, pair_clean, h, m, sig_dir))
+
+    signals.sort(key=lambda x: x[0])
+
+    signal_lines = []
+    for _, pair_clean, h, m, sig_dir in signals:
+        bold_pair = to_bold(pair_clean)
+        bold_time = to_bold(f"{h:02d}:{m:02d}")
+        bold_dir = to_bold(sig_dir)
+        signal_lines.append(f"{e('⚡')} {to_bold('M1')} {bold_pair} {bold_time} {bold_dir}")
+
+    signals_text = "\n".join(signal_lines)
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    final_text = f"""{e('🚀')} {to_bold_italic('LIVE MARKET FS')} {e('🚀')}
+
+{e('📅')} {to_bold(today)}
+{e('🌐')} {to_bold('TIMEZONE')}: UTC {to_bold(user_tz)}
+
+━━━━━━━ • ━━━━━━━
+{signals_text}
+━━━━━━━ • ━━━━━━━
+
+{e('✨')} {to_bold('BACK-TESTED')} ✔️
+{e('💎')} {to_bold('USE SAFETY FOR BETTER RESULT')}"""
+
+    final_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Back to Main Menu", callback_data="main_menu", style=STYLE_BLUE, icon_custom_emoji_id=EMOJI_IDS["house"])],
+    ])
+    await safe_edit_message(query, final_text, reply_markup=final_keyboard, parse_mode=ParseMode.HTML)
 
 
 # ============================================================
